@@ -1,0 +1,23 @@
+# Dependency directories
+node_modules/
+venv/
+.env
+.env.*
+
+# Build outputs
+.dist/
+dist/
+build/
+coverage/
+
+# Editor and OS files
+.vscode/
+.idea/
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.swp
+*.swo
