@@ -255,17 +255,26 @@ const Dashboard = () => {
         return {
             student: (project) => {
                 const canSubmit = ['PROPOSED', 'REVISION_REQUIRED'].includes(project.status);
+                const hasDocument = Boolean(project.document?.fileId || project.document?.webViewLink);
                 if (!canSubmit) return null;
 
                 return (
-                    <Button
-                        onClick={async () => {
-                            await handleStatusChange(project._id, 'ADVISER_REVIEW');
-                        }}
-                        className="tw-w-full"
-                    >
-                        Submit for Adviser Review
-                    </Button>
+                    <div className="tw-space-y-2">
+                        <Button
+                            disabled={!hasDocument}
+                            onClick={async () => {
+                                await handleStatusChange(project._id, 'ADVISER_REVIEW');
+                            }}
+                            className="tw-w-full"
+                        >
+                            Submit for Adviser Review
+                        </Button>
+                        {!hasDocument && (
+                            <div className="tw-text-xs tw-text-gray-600">
+                                Upload a proposal document to enable submission.
+                            </div>
+                        )}
+                    </div>
                 );
             },
             adviser: (project) => {
@@ -467,7 +476,7 @@ const Dashboard = () => {
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
-                                                View Document
+                                                View Proposal Document
                                             </a>
                                         )}
 
@@ -572,7 +581,7 @@ const Dashboard = () => {
                                             target="_blank"
                                             rel="noreferrer"
                                         >
-                                            View Document
+                                            View Proposal Document
                                         </a>
                                     ) : (
                                         <div className="tw-text-sm tw-text-gray-600">No document uploaded yet.</div>

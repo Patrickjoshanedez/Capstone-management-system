@@ -37,6 +37,16 @@ APP_NAME=Project Workspace
 GOOGLE_CLIENT_EMAIL=service-account@...
 GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
 GOOGLE_DRIVE_FOLDER_ID=your_shared_folder_id
+
+# reCAPTCHA v2 (Login/Register only)
+# Create reCAPTCHA keys in Google reCAPTCHA admin.
+RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key
+```
+
+Create a `.env` file in the `client` directory:
+
+```env
+VITE_RECAPTCHA_SITE_KEY=your_recaptcha_site_key
 ```
 
 ## 3. Installation

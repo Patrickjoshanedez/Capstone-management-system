@@ -17,7 +17,8 @@
     ```json
     { 
       "email": "student@buksu.edu.ph", 
-      "password": "password123" 
+      "password": "password123",
+      "recaptchaToken": "token_from_recaptcha_checkbox"
     }
     ```
 *   **Response**: 
@@ -28,6 +29,20 @@
       "email": "student@buksu.edu.ph",
       "role": "student",
       "token": "jwt_token_string"
+    }
+    ```
+
+*   **reCAPTCHA required**: `400`
+    ```json
+    {
+      "message": "reCAPTCHA required"
+    }
+    ```
+
+*   **reCAPTCHA verification failed**: `403`
+    ```json
+    {
+      "message": "reCAPTCHA verification failed"
     }
     ```
 
@@ -95,7 +110,8 @@
       "email": "student@buksu.edu.ph",
       "password": "password123",
       "role": "student",
-      "department": "IT"
+      "department": "IT",
+      "recaptchaToken": "token_from_recaptcha_checkbox"
     }
     ```
 *   **Response**:
@@ -106,6 +122,20 @@
       "email": "student@buksu.edu.ph",
       "role": "student",
       "token": "jwt_token_string"
+    }
+    ```
+
+*   **reCAPTCHA required**: `400`
+    ```json
+    {
+      "message": "reCAPTCHA required"
+    }
+    ```
+
+*   **reCAPTCHA verification failed**: `403`
+    ```json
+    {
+      "message": "reCAPTCHA verification failed"
     }
     ```
 
@@ -234,7 +264,7 @@
 
 - Allowed transitions (enforced server-side):
   - Student:
-    - `PROPOSED` or `REVISION_REQUIRED` → `ADVISER_REVIEW`
+    - `PROPOSED` or `REVISION_REQUIRED` → `ADVISER_REVIEW` (requires an uploaded proposal document)
   - Adviser:
     - `ADVISER_REVIEW` → `APPROVED_FOR_DEFENSE`
     - `ADVISER_REVIEW` → `REVISION_REQUIRED`
@@ -253,6 +283,14 @@
     "status": "APPROVED_FOR_DEFENSE"
   }
 }
+
+- Student submission without a document: `400`
+
+```json
+{
+  "message": "Please upload a proposal document before submitting for adviser review"
+}
+```
 ```
 
 ### Get Workflow Logs

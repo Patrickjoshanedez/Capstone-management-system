@@ -21,16 +21,36 @@ const parseCommaSeparated = (value) => {
     return [];
 };
 
+const getIdString = (value) => {
+    if (!value) return null;
+
+    if (typeof value === 'string') return value;
+
+    if (typeof value === 'object' && value._id) {
+        return value._id.toString();
+    }
+
+    if (typeof value.toString === 'function') {
+        return value.toString();
+    }
+
+    return null;
+};
+
 const canAccessProject = (project, user) => {
     if (!project || !user) return false;
 
     if (user.role === 'coordinator') return true;
 
+    const userId = getIdString(user._id);
+    if (!userId) return false;
+
     if (user.role === 'adviser') {
-        return project.adviser && project.adviser.toString() === user._id.toString();
+        const adviserId = getIdString(project.adviser);
+        return Boolean(adviserId && adviserId === userId);
     }
 
-    return Array.isArray(project.members) && project.members.some((m) => m.toString() === user._id.toString());
+    return Array.isArray(project.members) && project.members.some((member) => getIdString(member) === userId);
 };
 
 const createWorkflowLog = async ({ projectId, userId, fromStatus, toStatus }) => {
@@ -182,6 +202,15 @@ exports.updateProjectStatus = async (req, res) => {
         }
 
         const currentStatus = project.status;
+        const hasUploadedDocument = Boolean(project.document && project.document.fileId);
+
+        if (
+            req.user.role === 'student' &&
+            nextStatus === 'ADVISER_REVIEW' &&
+            !hasUploadedDocument
+        ) {
+            return res.status(400).json({ message: 'Please upload a proposal document before submitting for adviser review' });
+        }
 
         const isAllowedTransition = (() => {
             if (req.user.role === 'student') {
@@ -192,7 +221,7 @@ exports.updateProjectStatus = async (req, res) => {
             }
 
             if (req.user.role === 'adviser') {
-                const isAssigned = project.adviser && project.adviser.toString() === req.user._id.toString();
+                const isAssigned = getIdString(project.adviser) === getIdString(req.user._id);
                 if (!isAssigned) return false;
 
                 if (currentStatus === 'ADVISER_REVIEW') {

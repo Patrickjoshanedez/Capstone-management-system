@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { verifyRecaptchaToken } = require('../services/recaptchaService');
 
 // Generate JWT
 const generateToken = (id) => {
@@ -17,7 +18,20 @@ const generateToken = (id) => {
 // @access  Public
 exports.registerUser = async (req, res) => {
     try {
-        const { name, email, password, role, department } = req.body;
+        const { name, email, password, role, department, recaptchaToken } = req.body;
+
+        if (!process.env.RECAPTCHA_SECRET_KEY) {
+            return res.status(500).json({ message: 'reCAPTCHA is not configured' });
+        }
+
+        if (!String(recaptchaToken || '').trim()) {
+            return res.status(400).json({ message: 'reCAPTCHA required' });
+        }
+
+        const recaptchaResult = await verifyRecaptchaToken({ token: recaptchaToken, remoteIp: req.ip });
+        if (!recaptchaResult.success) {
+            return res.status(403).json({ message: 'reCAPTCHA verification failed' });
+        }
 
         if (!name || !email || !password || !role) {
             return res.status(400).json({ message: 'Please add all fields' });
@@ -63,7 +77,20 @@ exports.registerUser = async (req, res) => {
 // @access  Public
 exports.loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, recaptchaToken } = req.body;
+
+        if (!process.env.RECAPTCHA_SECRET_KEY) {
+            return res.status(500).json({ message: 'reCAPTCHA is not configured' });
+        }
+
+        if (!String(recaptchaToken || '').trim()) {
+            return res.status(400).json({ message: 'reCAPTCHA required' });
+        }
+
+        const recaptchaResult = await verifyRecaptchaToken({ token: recaptchaToken, remoteIp: req.ip });
+        if (!recaptchaResult.success) {
+            return res.status(403).json({ message: 'reCAPTCHA verification failed' });
+        }
 
         // Check for user email
         const user = await User.findOne({ email });

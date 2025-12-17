@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/card';
 import api from '../services/api';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -15,6 +16,8 @@ const Register = () => {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+    const [recaptchaToken, setRecaptchaToken] = useState('');
     const navigate = useNavigate();
     const { login } = useAuth();
 
@@ -25,10 +28,24 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        if (!recaptchaSiteKey) {
+            setError('reCAPTCHA is not configured');
+            return;
+        }
+
+        if (!recaptchaToken) {
+            setError('Please complete the reCAPTCHA');
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const response = await api.post('/auth/register', formData);
+            const response = await api.post('/auth/register', {
+                ...formData,
+                recaptchaToken,
+            });
             login(response.data);
             navigate('/dashboard');
         } catch (err) {
@@ -98,6 +115,18 @@ const Register = () => {
                                 <option value="adviser">Adviser</option>
                                 <option value="coordinator">Coordinator</option>
                             </select>
+                        </div>
+
+                        <div className="tw-flex tw-justify-center">
+                            {recaptchaSiteKey ? (
+                                <ReCAPTCHA
+                                    sitekey={recaptchaSiteKey}
+                                    onChange={(token) => setRecaptchaToken(token || '')}
+                                    onExpired={() => setRecaptchaToken('')}
+                                />
+                            ) : (
+                                <div className="tw-text-xs tw-text-red-600">reCAPTCHA is not configured.</div>
+                            )}
                         </div>
                         <Button type="submit" className="tw-w-full" disabled={loading}>
                             {loading ? 'Creating Account...' : 'Register'}

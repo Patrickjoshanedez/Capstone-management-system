@@ -5,6 +5,7 @@
 ### 1. Student
 *   **Can**:
     *   Create a Project Proposal.
+    *   Upload a proposal document so the adviser can review it.
     *   Upload documents when status is `PROPOSED` or `REVISION_REQUIRED`.
     *   View their own project details and logs.
 *   **Cannot**:
