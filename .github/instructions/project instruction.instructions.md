@@ -70,10 +70,28 @@ All sprint tasks must follow the Trello Kanban format:
 *   **Title:** `As a <role>, I want to <action> So that <benefit>`
 *   **Description:** Gherkin syntax (`Given/When/Then`) for acceptance criteria.
 
+**Sprint Completion Tracking (MANDATORY):**
+*   When a sprint is completed, you **MUST** update [docs/sprints/completed-sprints.md](docs/sprints/completed-sprints.md) with:
+  *   Sprint name + dates (if known)
+  *   Completed codenames
+  *   Delivered endpoints/features (and any notable deviations)
+  *   Links to key implementation files
+
 ## RESPONSE FORMAT
 *   When asked for code, provide the **FULL** file content.
 *   Do not abbreviate (no `//...rest of code`).
 *   Always include error handling (`try/catch`).
+
+## PLAN STATUS INDICATOR (MANDATORY)
+For every chat response that includes a plan (or a plan update), you **MUST** end the message with a short status indicator that clearly shows what is done vs not done.
+
+Rules:
+*   Put it at the **end of the message only** (no other plan/status blocks elsewhere in the response).
+*   Keep it short (max 5 bullets) and use this exact structure:
+  *   Done: ...
+  *   In progress: ...
+  *   Next: ...
+  *   Blocked: ... (only if applicable)
 
 ## 📝 Recommended "Docs" Folder Structure
 Since you asked for a dedicated documentation folder, tell the AI to initialize this structure immediately:

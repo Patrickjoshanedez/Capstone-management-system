@@ -15,7 +15,7 @@ const ProjectSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['PROPOSED', 'ADVISER_REVIEW', 'REVISION_REQUIRED', 'APPROVED_FOR_DEFENSE', 'ARCHIVED'],
+        enum: ['PROPOSED', 'ADVISER_REVIEW', 'REVISION_REQUIRED', 'APPROVED_FOR_DEFENSE', 'FINAL_SUBMITTED', 'ARCHIVED'],
         default: 'PROPOSED'
     },
     document: {

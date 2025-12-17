@@ -26,6 +26,13 @@ exports.uploadDocument = async (req, res) => {
             return res.status(404).json({ message: 'Project not found' });
         }
 
+        const isMember = Array.isArray(project.members) && project.members.some(
+            (memberId) => memberId.toString() === req.user._id.toString()
+        );
+        if (!isMember) {
+            return res.status(403).json({ message: 'Not authorized to upload to this project' });
+        }
+
         // Workflow Logic: Check Status
         if (!['PROPOSED', 'REVISION_REQUIRED'].includes(project.status)) {
             return res.status(403).json({ 

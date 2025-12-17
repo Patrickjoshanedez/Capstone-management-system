@@ -22,6 +22,26 @@ const UserSchema = new mongoose.Schema({
     department: {
         type: String,
         default: 'IT'
+    },
+    resetPasswordCodeHash: {
+        type: String,
+        default: null
+    },
+    resetPasswordCodeExpiresAt: {
+        type: Date,
+        default: null
+    },
+    resetPasswordRequestedAt: {
+        type: Date,
+        default: null
+    },
+    resetPasswordFailedAttempts: {
+        type: Number,
+        default: 0
+    },
+    resetPasswordBlockedUntil: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true });
 

@@ -16,6 +16,23 @@ PORT=5000
 MONGO_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/capstone?retryWrites=true&w=majority
 JWT_SECRET=your_jwt_secret_key
 
+# Password reset (Gmail SMTP - zero cost)
+# Use a Gmail App Password instead of your normal password.
+SMTP_USER=yourgmail@gmail.com
+SMTP_PASS=your_gmail_app_password
+SMTP_FROM="Project Workspace <yourgmail@gmail.com>"
+
+# Optional (defaults work for Gmail)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+
+# Optional: secret used to hash reset codes (defaults to JWT_SECRET)
+RESET_CODE_SECRET=your_reset_code_secret
+
+# Optional: email subject branding
+APP_NAME=Project Workspace
+
 # Google Drive
 GOOGLE_CLIENT_EMAIL=service-account@...
 GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."

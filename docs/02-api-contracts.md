@@ -31,6 +31,61 @@
     }
     ```
 
+### Forgot Password (Email Code)
+*   **POST** `/api/v1/auth/forgot-password`
+*   **Body**:
+    ```json
+    {
+      "email": "student@buksu.edu.ph"
+    }
+    ```
+*   **Response**:
+    ```json
+    {
+      "message": "If an account exists for that email, a reset code will be sent."
+    }
+    ```
+
+*   **Note**: If SMTP is not configured in the current environment, the API still returns `200` (anti-enumeration), but no email is sent.
+
+*   **Rate limit**: `429`
+    ```json
+    {
+      "message": "Too many reset requests. Please try again later."
+    }
+    ```
+
+### Reset Password (Email Code)
+*   **POST** `/api/v1/auth/reset-password`
+*   **Body**:
+    ```json
+    {
+      "email": "student@buksu.edu.ph",
+      "code": "123456",
+      "newPassword": "newStrongPassword123"
+    }
+    ```
+*   **Response**: `200`
+    ```json
+    {
+      "message": "Password reset successful. Please log in."
+    }
+    ```
+
+*   **Invalid/expired code**: `400`
+    ```json
+    {
+      "message": "Invalid or expired code"
+    }
+    ```
+
+*   **Too many attempts**: `429`
+    ```json
+    {
+      "message": "Too many attempts. Please try again later."
+    }
+    ```
+
 ### Register
 *   **POST** `/api/v1/auth/register`
 *   **Body**:
@@ -81,9 +136,15 @@
 ```json
 {
   "title": "My Capstone Project",
-  "adviser": "<optional adviser userId>"
+  "memberEmails": ["student1@buksu.edu.ph", "student2@buksu.edu.ph"],
+  "adviserEmail": "adviser@buksu.edu.ph"
 }
 ```
+
+- Notes:
+  - The authenticated student is always included as a project member.
+  - `memberEmails` / `adviserEmail` must match existing users.
+  - Member emails must belong to `student` users; adviser email must belong to an `adviser` user.
 
 - Response: `201`
 
@@ -115,7 +176,12 @@
     {
       "_id": "...",
       "title": "...",
-      "status": "PROPOSED"
+      "status": "PROPOSED",
+      "plagiarismReport": {
+        "score": 0,
+        "status": "pending_implementation",
+        "reportUrl": "#"
+      }
     }
   ]
 }
@@ -139,6 +205,11 @@
     "_id": "...",
     "title": "...",
     "status": "ADVISER_REVIEW",
+    "plagiarismReport": {
+      "score": 0,
+      "status": "pending_implementation",
+      "reportUrl": "#"
+    },
     "document": {
       "fileId": "...",
       "webViewLink": "...",
@@ -168,7 +239,10 @@
     - `ADVISER_REVIEW` → `APPROVED_FOR_DEFENSE`
     - `ADVISER_REVIEW` → `REVISION_REQUIRED`
   - Coordinator:
-    - `APPROVED_FOR_DEFENSE` → `ARCHIVED`
+    - `FINAL_SUBMITTED` → `ARCHIVED`
+
+  - Additional Adviser transition:
+    - `APPROVED_FOR_DEFENSE` → `FINAL_SUBMITTED`
 
 - Response: `200`
 
@@ -199,87 +273,41 @@
       "action": "STATUS_CHANGE",
       "fromStatus": "PROPOSED",
       "toStatus": "ADVISER_REVIEW",
+      "timestamp": "2025-01-01T00:00:00.000Z",
       "createdAt": "2025-01-01T00:00:00.000Z"
     }
   ]
 }
 ```
 
-## Projects
-
-### List Projects (Adviser/Coordinator)
-*   **GET** `/projects`
-*   **Headers**: `Authorization: Bearer <token>`
-*   **Query Params**: `?status=PROPOSED` (Optional)
-*   **Response**: 
-    ```json
-    [
-      {
-        "_id": "project_id",
-        "title": "Capstone Title",
-        "status": "PROPOSED",
-        "members": [{ "name": "Student 1" }]
-      }
-    ]
-    ```
-
-### Get Project Details
-*   **GET** `/projects/:projectId`
-*   **Headers**: `Authorization: Bearer <token>`
-*   **Response**: `{ "project": { ... } }`
-
-### Create Project
-*   **POST** `/projects`
-*   **Headers**: `Authorization: Bearer <token>`
-*   **Body**: 
-    ```json
-    { 
-      "title": "My Capstone Project", 
-      "members": ["student_id_1", "student_id_2"] 
-    }
-    ```
-*   **Response**: `{ "project": { "status": "PROPOSED", ... } }`
-
 ### Upload Document
-*   **POST** `/projects/:projectId/upload`
-*   **Headers**: `Authorization: Bearer <token>`, `Content-Type: multipart/form-data`
-*   **Body**: `file` (PDF/DOCX, Max 25MB)
-*   **Response**: 
-    ```json
-    {
-      "message": "Upload successful",
-      "fileId": "google_drive_file_id",
-      "webViewLink": "https://drive.google.com/file/d/...",
-      "plagiarism": {
-        "score": 0,
-        "status": "pending_implementation"
-      }
-    }
-    ```
 
-### Update Status
-*   **PATCH** `/projects/:projectId/status`
-*   **Headers**: `Authorization: Bearer <token>`
-*   **Body**: `{ "status": "APPROVED_FOR_DEFENSE" }`
-*   **Response**: `{ "project": { "status": "APPROVED_FOR_DEFENSE", ... } }`
+- Method: `POST`
+- URL: `/api/v1/projects/:projectId/upload`
+- Auth: Required
+- Roles:
+  - Student only
+- Headers:
+  - `Content-Type: multipart/form-data`
+- Body:
+  - `file` (max 25MB)
+- Rules:
+  - Upload allowed only when project status is `PROPOSED` or `REVISION_REQUIRED`
 
-## Workflow Logs
+- Response: `200`
 
-### Get Logs
-*   **GET** `/projects/:projectId/logs`
-*   **Headers**: `Authorization: Bearer <token>`
-*   **Response**: 
-    ```json
-    [ 
-      { 
-        "action": "STATUS_CHANGE", 
-        "fromStatus": "PROPOSED", 
-        "toStatus": "ADVISER_REVIEW", 
-        "user": { "name": "Adviser Name" }, 
-        "createdAt": "2023-10-27T10:00:00Z" 
-      } 
-    ]
-    ```
+```json
+{
+  "message": "Upload successful",
+  "fileId": "google_drive_file_id",
+  "webViewLink": "https://drive.google.com/file/d/...",
+  "plagiarism": {
+    "score": 0,
+    "status": "pending_implementation",
+    "reportUrl": "#"
+  }
+}
+```
 
 ## Error Responses
 *   **400 Bad Request**: `{ "message": "Validation error details" }`

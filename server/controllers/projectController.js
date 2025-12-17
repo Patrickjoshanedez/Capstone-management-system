@@ -1,5 +1,25 @@
 const Project = require('../models/Project');
 const WorkflowLog = require('../models/WorkflowLog');
+const User = require('../models/User');
+
+const normalizeEmail = (email) => {
+    return String(email || '').trim().toLowerCase();
+};
+
+const parseCommaSeparated = (value) => {
+    if (Array.isArray(value)) {
+        return value.map((item) => String(item || '').trim()).filter(Boolean);
+    }
+
+    if (typeof value === 'string') {
+        return value
+            .split(',')
+            .map((item) => String(item || '').trim())
+            .filter(Boolean);
+    }
+
+    return [];
+};
 
 const canAccessProject = (project, user) => {
     if (!project || !user) return false;
@@ -25,20 +45,66 @@ const createWorkflowLog = async ({ projectId, userId, fromStatus, toStatus }) =>
 
 exports.createProject = async (req, res) => {
     try {
-        const { title, members, adviser } = req.body;
+        const { title, members, adviser, memberEmails, adviserEmail } = req.body;
 
         if (!title) {
             return res.status(400).json({ message: 'Title is required' });
         }
 
         const requestedMembers = Array.isArray(members) ? members : [];
-        const memberIds = Array.from(new Set([req.user._id.toString(), ...requestedMembers.map((m) => m.toString())]));
+
+        const requestedMemberEmails = parseCommaSeparated(memberEmails).map(normalizeEmail);
+        const uniqueMemberEmails = Array.from(new Set(requestedMemberEmails)).filter(Boolean);
+
+        let memberIdsFromEmails = [];
+        if (uniqueMemberEmails.length > 0) {
+            const resolvedMembers = await User.find({ email: { $in: uniqueMemberEmails } }).select('_id email role');
+            const emailToUser = new Map(resolvedMembers.map((user) => [normalizeEmail(user.email), user]));
+
+            const missingEmails = uniqueMemberEmails.filter((email) => !emailToUser.has(email));
+            const invalidRoleEmails = resolvedMembers
+                .filter((user) => user.role !== 'student')
+                .map((user) => normalizeEmail(user.email));
+
+            if (missingEmails.length > 0 || invalidRoleEmails.length > 0) {
+                return res.status(400).json({
+                    message: 'Invalid member emails',
+                    missingEmails,
+                    invalidRoleEmails
+                });
+            }
+
+            memberIdsFromEmails = resolvedMembers.map((user) => user._id.toString());
+        }
+
+        let resolvedAdviserId = adviser || undefined;
+        const normalizedAdviserEmail = normalizeEmail(adviserEmail);
+        if (normalizedAdviserEmail) {
+            const adviserUser = await User.findOne({ email: normalizedAdviserEmail }).select('_id email role');
+            if (!adviserUser) {
+                return res.status(400).json({ message: 'Adviser email not found' });
+            }
+
+            if (adviserUser.role !== 'adviser') {
+                return res.status(400).json({ message: 'Adviser email must belong to an adviser account' });
+            }
+
+            resolvedAdviserId = adviserUser._id;
+        }
+
+        const memberIds = Array.from(
+            new Set([
+                req.user._id.toString(),
+                ...requestedMembers.map((m) => m.toString()),
+                ...memberIdsFromEmails
+            ])
+        );
 
         const project = await Project.create({
             title,
             members: memberIds,
-            adviser: adviser || undefined,
-            status: 'PROPOSED',
+            adviser: resolvedAdviserId,
+            status: 'PROPOSED'
         });
 
         return res.status(201).json({ project });
@@ -129,11 +195,15 @@ exports.updateProjectStatus = async (req, res) => {
                 const isAssigned = project.adviser && project.adviser.toString() === req.user._id.toString();
                 if (!isAssigned) return false;
 
-                return currentStatus === 'ADVISER_REVIEW' && ['REVISION_REQUIRED', 'APPROVED_FOR_DEFENSE'].includes(nextStatus);
+                if (currentStatus === 'ADVISER_REVIEW') {
+                    return ['REVISION_REQUIRED', 'APPROVED_FOR_DEFENSE'].includes(nextStatus);
+                }
+
+                return currentStatus === 'APPROVED_FOR_DEFENSE' && nextStatus === 'FINAL_SUBMITTED';
             }
 
             if (req.user.role === 'coordinator') {
-                return currentStatus === 'APPROVED_FOR_DEFENSE' && nextStatus === 'ARCHIVED';
+                return currentStatus === 'FINAL_SUBMITTED' && nextStatus === 'ARCHIVED';
             }
 
             return false;
