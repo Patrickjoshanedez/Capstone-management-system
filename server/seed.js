@@ -22,21 +22,24 @@ const seedUsers = async () => {
 
         const users = [
             {
-                name: 'Coordinator User',
+                firstName: 'Coordinator',
+                lastName: 'User',
                 email: 'coordinator@buksu.edu.ph',
                 password: hashedPassword,
                 role: 'coordinator',
                 department: 'IT'
             },
             {
-                name: 'Adviser User',
+                firstName: 'Adviser',
+                lastName: 'User',
                 email: 'adviser@buksu.edu.ph',
                 password: hashedPassword,
                 role: 'adviser',
                 department: 'IT'
             },
             {
-                name: 'Student User',
+                firstName: 'Student',
+                lastName: 'User',
                 email: 'student@buksu.edu.ph',
                 password: hashedPassword,
                 role: 'student',

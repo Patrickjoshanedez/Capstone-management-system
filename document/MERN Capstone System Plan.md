@@ -1,4 +1,4 @@
-# **Finalizing the Capstone Management System: A Comprehensive Architectural Blueprint for a Zero-Cost, AI-Integrated MERN Platform**
+# **Finalizing the Capstone Management System: A Comprehensive Architectural Blueprint for a Zero-Cost**
 
 ## **1\. Introduction: The Imperative for a Sustainable Research Infrastructure**
 

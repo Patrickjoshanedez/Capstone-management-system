@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-    name: {
+    firstName: {
+        type: String,
+        required: true
+    },
+    lastName: {
         type: String,
         required: true
     },
@@ -23,6 +27,29 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: 'IT'
     },
+    // Profile fields (as per workflow diagram)
+    gender: {
+        type: String,
+        enum: ['male', 'female', 'other', ''],
+        default: ''
+    },
+    contactEmail: {
+        type: String,
+        default: ''
+    },
+    avatar: {
+        type: String,
+        default: ''
+    },
+    skills: [{
+        type: String
+    }],
+    yearLevel: {
+        type: String,
+        enum: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year', ''],
+        default: ''
+    },
+    // Password reset fields
     resetPasswordCodeHash: {
         type: String,
         default: null

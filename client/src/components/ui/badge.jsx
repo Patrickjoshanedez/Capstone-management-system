@@ -7,13 +7,13 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "tw-border-transparent tw-bg-primary tw-text-primary-foreground tw-shadow hover:tw-bg-primary/80",
-        secondary: "tw-border-transparent tw-bg-secondary tw-text-secondary-foreground hover:tw-bg-secondary/80",
-        destructive: "tw-border-transparent tw-bg-destructive tw-text-destructive-foreground tw-shadow hover:tw-bg-destructive/80",
-        outline: "tw-text-foreground",
+        default: "tw-border-transparent tw-bg-indigo-600 tw-text-white tw-shadow hover:tw-bg-indigo-700",
+        secondary: "tw-border-transparent tw-bg-muted tw-text-muted-foreground hover:tw-bg-muted/80",
+        destructive: "tw-border-transparent tw-bg-red-500 tw-text-white tw-shadow hover:tw-bg-red-600",
+        outline: "tw-text-foreground tw-border-border",
         // Custom Status Variants
-        PROPOSED: "tw-border-transparent tw-bg-yellow-500 tw-text-white hover:tw-bg-yellow-600",
-        APPROVED: "tw-border-transparent tw-bg-green-500 tw-text-white hover:tw-bg-green-600",
+        PROPOSED: "tw-border-transparent tw-bg-amber-500 tw-text-white hover:tw-bg-amber-600",
+        APPROVED: "tw-border-transparent tw-bg-emerald-500 tw-text-white hover:tw-bg-emerald-600",
         REVISION: "tw-border-transparent tw-bg-red-500 tw-text-white hover:tw-bg-red-600",
       },
     },

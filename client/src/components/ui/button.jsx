@@ -4,16 +4,16 @@ import { cva } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-rounded-md tw-text-sm tw-font-medium tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50",
+  "tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-rounded-md tw-text-sm tw-font-medium tw-transition-all tw-duration-200 focus-visible:tw-outline-none focus-visible:tw-ring-2 focus-visible:tw-ring-indigo-500 focus-visible:tw-ring-offset-2 disabled:tw-pointer-events-none disabled:tw-opacity-50",
   {
     variants: {
       variant: {
-        default: "tw-bg-primary tw-text-primary-foreground tw-shadow hover:tw-bg-primary/90",
-        destructive: "tw-bg-destructive tw-text-destructive-foreground tw-shadow-sm hover:tw-bg-destructive/90",
-        outline: "tw-border tw-border-input tw-bg-background tw-shadow-sm hover:tw-bg-accent hover:tw-text-accent-foreground",
-        secondary: "tw-bg-secondary tw-text-secondary-foreground tw-shadow-sm hover:tw-bg-secondary/80",
-        ghost: "hover:tw-bg-accent hover:tw-text-accent-foreground",
-        link: "tw-text-primary tw-underline-offset-4 hover:tw-underline",
+        default: "tw-bg-indigo-600 tw-text-white tw-shadow hover:tw-bg-indigo-700 active:tw-bg-indigo-800",
+        destructive: "tw-bg-red-500 tw-text-white tw-shadow-sm hover:tw-bg-red-600 active:tw-bg-red-700",
+        outline: "tw-border tw-border-border tw-bg-transparent tw-text-foreground tw-shadow-sm hover:tw-bg-muted hover:tw-text-foreground",
+        secondary: "tw-bg-muted tw-text-foreground tw-shadow-sm hover:tw-bg-muted/80",
+        ghost: "tw-text-foreground hover:tw-bg-muted",
+        link: "tw-text-indigo-600 dark:tw-text-indigo-400 tw-underline-offset-4 hover:tw-underline",
       },
       size: {
         default: "tw-h-9 tw-px-4 tw-py-2",

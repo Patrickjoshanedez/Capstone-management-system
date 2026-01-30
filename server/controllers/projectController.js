@@ -280,3 +280,124 @@ exports.getProjectLogs = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Check title similarity against existing projects
+// @route   POST /api/v1/projects/check-title
+// @access  Private (Student)
+exports.checkTitleSimilarity = async (req, res) => {
+    try {
+        const { title } = req.body;
+
+        if (!title || title.trim().length < 5) {
+            return res.status(400).json({ message: 'Title must be at least 5 characters' });
+        }
+
+        const normalizedTitle = title.trim().toLowerCase();
+
+        // Get all existing project titles
+        const existingProjects = await Project.find({}, 'title status members adviser')
+            .populate('members', 'name email')
+            .populate('adviser', 'name email');
+
+        // Calculate similarity scores
+        const results = [];
+
+        for (const project of existingProjects) {
+            const existingTitle = project.title.toLowerCase();
+            const similarity = calculateSimilarity(normalizedTitle, existingTitle);
+
+            if (similarity > 30) { // Only return if more than 30% similar
+                results.push({
+                    projectId: project._id,
+                    title: project.title,
+                    similarity: Math.round(similarity),
+                    status: project.status,
+                    isInDevelopment: !['ARCHIVED', 'FINAL_SUBMITTED'].includes(project.status),
+                    members: project.members?.map(m => m.name) || [],
+                });
+            }
+        }
+
+        // Sort by similarity (highest first)
+        results.sort((a, b) => b.similarity - a.similarity);
+
+        // Determine overall result
+        let resultType = 'unique'; // Default: title is unique
+        let message = 'This capstone title has not yet existed. You may proceed with your project.';
+
+        if (results.length > 0) {
+            const topMatch = results[0];
+
+            if (topMatch.similarity >= 85) {
+                // Very high similarity
+                if (topMatch.isInDevelopment) {
+                    resultType = 'in_development';
+                    message = 'This capstone is currently being developed by your seniors. Please choose a different title.';
+                } else {
+                    resultType = 'exists';
+                    message = 'A capstone with a very similar title already exists. Please consider a different approach.';
+                }
+            } else if (topMatch.similarity >= 50) {
+                resultType = 'similar';
+                message = 'This capstone has some similarity with existing projects but is not entirely the same. You may proceed with modifications.';
+            }
+        }
+
+        return res.status(200).json({
+            title: title.trim(),
+            resultType,
+            message,
+            similarProjects: results.slice(0, 5), // Return top 5 similar projects
+        });
+    } catch (error) {
+        console.error('Check title similarity error:', error);
+        return res.status(500).json({ message: 'Failed to check title similarity' });
+    }
+};
+
+// Simple string similarity calculation (Levenshtein-based)
+function calculateSimilarity(str1, str2) {
+    const len1 = str1.length;
+    const len2 = str2.length;
+
+    if (len1 === 0 || len2 === 0) return 0;
+
+    // Check for exact match
+    if (str1 === str2) return 100;
+
+    // Check for word overlap
+    const words1 = new Set(str1.split(/\s+/).filter(w => w.length > 2));
+    const words2 = new Set(str2.split(/\s+/).filter(w => w.length > 2));
+
+    let commonWords = 0;
+    for (const word of words1) {
+        if (words2.has(word)) commonWords++;
+    }
+
+    const totalUniqueWords = new Set([...words1, ...words2]).size;
+    const wordSimilarity = totalUniqueWords > 0 ? (commonWords / totalUniqueWords) * 100 : 0;
+
+    // Simple character-based similarity
+    const matrix = Array.from({ length: len1 + 1 }, () => Array(len2 + 1).fill(0));
+
+    for (let i = 0; i <= len1; i++) matrix[i][0] = i;
+    for (let j = 0; j <= len2; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= len1; i++) {
+        for (let j = 1; j <= len2; j++) {
+            const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,
+                matrix[i][j - 1] + 1,
+                matrix[i - 1][j - 1] + cost
+            );
+        }
+    }
+
+    const distance = matrix[len1][len2];
+    const maxLen = Math.max(len1, len2);
+    const levenshteinSimilarity = ((maxLen - distance) / maxLen) * 100;
+
+    // Combine both metrics (weighted average)
+    return Math.max(wordSimilarity, levenshteinSimilarity);
+}

@@ -15,12 +15,18 @@ const upload = multer({
 
 // --- AUTH ---
 router.post('/auth/register', authController.registerUser);
+router.post('/auth/verify-otp', authController.verifyOTP);
+router.post('/auth/resend-otp', authController.resendOTP);
 router.post('/auth/login', authController.loginUser);
 router.post('/auth/forgot-password', authController.forgotPassword);
 router.post('/auth/reset-password', authController.resetPassword);
 router.get('/auth/me', protect, authController.getMe);
+router.put('/auth/profile', protect, authController.updateProfile);
 
 // --- PROJECTS ---
+
+// Check Title Similarity (before creating project)
+router.post('/projects/check-title', protect, verifyRole(['student']), projectController.checkTitleSimilarity);
 
 // List Projects (Role-based)
 router.get('/projects', protect, verifyRole(['student', 'adviser', 'coordinator']), projectController.listProjects);

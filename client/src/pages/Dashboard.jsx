@@ -270,7 +270,7 @@ const Dashboard = () => {
                             Submit for Adviser Review
                         </Button>
                         {!hasDocument && (
-                            <div className="tw-text-xs tw-text-gray-600">
+                            <div className="tw-text-xs tw-text-muted-foreground">
                                 Upload a proposal document to enable submission.
                             </div>
                         )}
@@ -338,12 +338,12 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="tw-min-h-screen tw-bg-gray-100 tw-p-6">
+        <div className="tw-min-h-screen tw-bg-background tw-p-6">
             <div className="tw-max-w-4xl tw-mx-auto tw-space-y-6">
                 <div className="tw-flex tw-flex-col sm:tw-flex-row sm:tw-items-center tw-gap-3 sm:tw-justify-between">
                     <div>
-                        <h1 className="tw-text-2xl tw-font-bold">Dashboard</h1>
-                        <p className="tw-text-sm tw-text-gray-600">Logged in as {user?.name} ({user?.role})</p>
+                        <h1 className="tw-text-2xl tw-font-bold tw-text-foreground">Dashboard</h1>
+                        <p className="tw-text-sm tw-text-muted-foreground">Logged in as {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User'} ({user?.role})</p>
                     </div>
                     <div className="tw-flex tw-items-center tw-gap-2">
                         {canCreateProject && (
@@ -361,30 +361,30 @@ const Dashboard = () => {
 
                                     <form onSubmit={handleCreateProject} className="tw-space-y-3">
                                         <div className="tw-space-y-1">
-                                            <label className="tw-text-sm tw-font-medium">Title</label>
+                                            <label className="tw-text-sm tw-font-medium tw-text-foreground">Title</label>
                                             <input
                                                 value={newTitle}
                                                 onChange={(e) => setNewTitle(e.target.value)}
-                                                className="tw-w-full tw-rounded tw-border tw-border-gray-300 tw-px-3 tw-py-2"
+                                                className="tw-w-full tw-rounded tw-border tw-border-border tw-bg-background tw-text-foreground tw-px-3 tw-py-2 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-indigo-500/50"
                                                 placeholder="My Capstone Project"
                                                 required
                                             />
                                         </div>
                                         <div className="tw-space-y-1">
-                                            <label className="tw-text-sm tw-font-medium">Member Emails (comma-separated, optional)</label>
+                                            <label className="tw-text-sm tw-font-medium tw-text-foreground">Member Emails (comma-separated, optional)</label>
                                             <input
                                                 value={newMemberEmails}
                                                 onChange={(e) => setNewMemberEmails(e.target.value)}
-                                                className="tw-w-full tw-rounded tw-border tw-border-gray-300 tw-px-3 tw-py-2"
+                                                className="tw-w-full tw-rounded tw-border tw-border-border tw-bg-background tw-text-foreground tw-px-3 tw-py-2 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-indigo-500/50"
                                                 placeholder="student1@buksu.edu.ph, student2@buksu.edu.ph"
                                             />
                                         </div>
                                         <div className="tw-space-y-1">
-                                            <label className="tw-text-sm tw-font-medium">Adviser Email (optional)</label>
+                                            <label className="tw-text-sm tw-font-medium tw-text-foreground">Adviser Email (optional)</label>
                                             <input
                                                 value={newAdviserEmail}
                                                 onChange={(e) => setNewAdviserEmail(e.target.value)}
-                                                className="tw-w-full tw-rounded tw-border tw-border-gray-300 tw-px-3 tw-py-2"
+                                                className="tw-w-full tw-rounded tw-border tw-border-border tw-bg-background tw-text-foreground tw-px-3 tw-py-2 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-indigo-500/50"
                                                 placeholder="adviser@buksu.edu.ph"
                                             />
                                         </div>
@@ -410,10 +410,10 @@ const Dashboard = () => {
                         <div
                             className={
                                 toast.type === 'success'
-                                    ? 'tw-bg-green-100 tw-border tw-border-green-300 tw-text-green-800 tw-rounded tw-p-3'
+                                    ? 'tw-bg-emerald-500/10 dark:tw-bg-emerald-500/20 tw-border tw-border-emerald-500/30 tw-text-emerald-800 dark:tw-text-emerald-300 tw-rounded tw-p-3'
                                     : toast.type === 'error'
-                                        ? 'tw-bg-red-100 tw-border tw-border-red-300 tw-text-red-800 tw-rounded tw-p-3'
-                                        : 'tw-bg-gray-100 tw-border tw-border-gray-300 tw-text-gray-800 tw-rounded tw-p-3'
+                                        ? 'tw-bg-red-500/10 dark:tw-bg-red-500/20 tw-border tw-border-red-500/30 tw-text-red-800 dark:tw-text-red-300 tw-rounded tw-p-3'
+                                        : 'tw-bg-muted tw-border tw-border-border tw-text-foreground tw-rounded tw-p-3'
                             }
                             role="status"
                         >
@@ -423,7 +423,7 @@ const Dashboard = () => {
                 )}
 
                 {error && (
-                    <div className="tw-bg-red-100 tw-border tw-border-red-300 tw-text-red-700 tw-rounded tw-p-3">
+                    <div className="tw-bg-red-500/10 dark:tw-bg-red-500/20 tw-border tw-border-red-500/30 tw-text-red-700 dark:tw-text-red-300 tw-rounded tw-p-3">
                         {error}
                     </div>
                 )}
@@ -435,20 +435,20 @@ const Dashboard = () => {
                     <CardContent>
                         {loading ? (
                             <div className="tw-space-y-2">
-                                <div className="tw-h-16 tw-rounded tw-bg-gray-200 tw-animate-pulse" />
-                                <div className="tw-h-16 tw-rounded tw-bg-gray-200 tw-animate-pulse" />
-                                <div className="tw-h-16 tw-rounded tw-bg-gray-200 tw-animate-pulse" />
+                                <div className="tw-h-16 tw-rounded tw-bg-muted tw-animate-pulse" />
+                                <div className="tw-h-16 tw-rounded tw-bg-muted tw-animate-pulse" />
+                                <div className="tw-h-16 tw-rounded tw-bg-muted tw-animate-pulse" />
                             </div>
                         ) : projects.length === 0 ? (
-                            <div className="tw-text-sm tw-text-gray-600">No projects found.</div>
+                            <div className="tw-text-sm tw-text-muted-foreground">No projects found.</div>
                         ) : (
                             <div className="tw-space-y-3">
                                 {projects.map((project) => (
-                                    <div key={project._id} className="tw-bg-white tw-border tw-border-gray-200 tw-rounded tw-p-4 tw-space-y-2">
+                                    <div key={project._id} className="tw-bg-card tw-border tw-border-border tw-rounded tw-p-4 tw-space-y-2">
                                         <div className="tw-flex tw-flex-col sm:tw-flex-row sm:tw-items-center sm:tw-justify-between tw-gap-2">
                                             <div>
-                                                <div className="tw-font-semibold">{project.title}</div>
-                                                <div className="tw-text-xs tw-text-gray-600">ID: {project._id}</div>
+                                                <div className="tw-font-semibold tw-text-foreground">{project.title}</div>
+                                                <div className="tw-text-xs tw-text-muted-foreground">ID: {project._id}</div>
                                             </div>
                                             <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-2">
                                                 <Badge variant={statusBadgeVariant(project.status)}>{project.status}</Badge>
@@ -471,7 +471,7 @@ const Dashboard = () => {
 
                                         {project.document?.webViewLink && (
                                             <a
-                                                className="tw-text-sm tw-text-blue-600 hover:tw-underline"
+                                                className="tw-text-sm tw-text-indigo-600 dark:tw-text-indigo-400 hover:tw-underline"
                                                 href={project.document.webViewLink}
                                                 target="_blank"
                                                 rel="noreferrer"
@@ -510,23 +510,23 @@ const Dashboard = () => {
                         </DialogHeader>
 
                         {detailsError && (
-                            <div className="tw-bg-red-100 tw-border tw-border-red-300 tw-text-red-700 tw-rounded tw-p-3">
+                            <div className="tw-bg-red-500/10 dark:tw-bg-red-500/20 tw-border tw-border-red-500/30 tw-text-red-700 dark:tw-text-red-300 tw-rounded tw-p-3">
                                 {detailsError}
                             </div>
                         )}
 
                         {detailsLoading ? (
-                            <div className="tw-text-sm tw-text-gray-600">Loading details...</div>
+                            <div className="tw-text-sm tw-text-muted-foreground">Loading details...</div>
                         ) : !selectedProject ? (
-                            <div className="tw-text-sm tw-text-gray-600">No project selected.</div>
+                            <div className="tw-text-sm tw-text-muted-foreground">No project selected.</div>
                         ) : (
                             <div className="tw-space-y-4">
                                 <div className="tw-flex tw-items-start tw-justify-between tw-gap-3">
                                     <div>
-                                        <div className="tw-text-lg tw-font-semibold">{selectedProject.title}</div>
-                                        <div className="tw-text-xs tw-text-gray-600">ID: {selectedProject._id}</div>
-                                        {selectedProject.adviser?.name && (
-                                            <div className="tw-text-sm tw-text-gray-700">Adviser: {selectedProject.adviser.name}</div>
+                                        <div className="tw-text-lg tw-font-semibold tw-text-foreground">{selectedProject.title}</div>
+                                        <div className="tw-text-xs tw-text-muted-foreground">ID: {selectedProject._id}</div>
+                                        {selectedProject.adviser?.firstName && (
+                                            <div className="tw-text-sm tw-text-muted-foreground">Adviser: {selectedProject.adviser.firstName} {selectedProject.adviser.lastName || ''}</div>
                                         )}
                                     </div>
                                     <div className="tw-flex tw-flex-col tw-items-end tw-gap-2">
@@ -538,7 +538,7 @@ const Dashboard = () => {
                                                 </Badge>
                                                 {getPlagiarismBadge(selectedProject.plagiarismReport).reportUrl && (
                                                     <a
-                                                        className="tw-text-xs tw-text-blue-600 hover:tw-underline"
+                                                        className="tw-text-xs tw-text-indigo-600 dark:tw-text-indigo-400 hover:tw-underline"
                                                         href={getPlagiarismBadge(selectedProject.plagiarismReport).reportUrl}
                                                         target="_blank"
                                                         rel="noreferrer"
@@ -552,31 +552,31 @@ const Dashboard = () => {
                                 </div>
 
                                 <div className="tw-space-y-1">
-                                    <div className="tw-text-sm tw-font-medium">Members</div>
+                                    <div className="tw-text-sm tw-font-medium tw-text-foreground">Members</div>
                                     {Array.isArray(selectedProject.members) && selectedProject.members.length > 0 ? (
-                                        <ul className="tw-text-sm tw-text-gray-700 tw-list-disc tw-pl-5">
+                                        <ul className="tw-text-sm tw-text-muted-foreground tw-list-disc tw-pl-5">
                                             {selectedProject.members.map((member) => (
                                                 <li key={member?._id || member}>
-                                                    {member?.name ? `${member.name} (${member.role})` : String(member)}
+                                                    {member?.firstName ? `${member.firstName} ${member.lastName || ''} (${member.role})` : String(member)}
                                                 </li>
                                             ))}
                                         </ul>
                                     ) : (
-                                        <div className="tw-text-sm tw-text-gray-600">No members listed.</div>
+                                        <div className="tw-text-sm tw-text-muted-foreground">No members listed.</div>
                                     )}
                                 </div>
 
                                 <div className="tw-space-y-2">
-                                    <div className="tw-text-sm tw-font-medium">Actions</div>
+                                    <div className="tw-text-sm tw-font-medium tw-text-foreground">Actions</div>
                                     {renderTransition(selectedProject)}
                                 </div>
 
                                 <div className="tw-space-y-2">
-                                    <div className="tw-text-sm tw-font-medium">Document</div>
+                                    <div className="tw-text-sm tw-font-medium tw-text-foreground">Document</div>
 
                                     {selectedProject.document?.webViewLink ? (
                                         <a
-                                            className="tw-text-sm tw-text-blue-600 hover:tw-underline"
+                                            className="tw-text-sm tw-text-indigo-600 dark:tw-text-indigo-400 hover:tw-underline"
                                             href={selectedProject.document.webViewLink}
                                             target="_blank"
                                             rel="noreferrer"
@@ -584,12 +584,12 @@ const Dashboard = () => {
                                             View Proposal Document
                                         </a>
                                     ) : (
-                                        <div className="tw-text-sm tw-text-gray-600">No document uploaded yet.</div>
+                                        <div className="tw-text-sm tw-text-muted-foreground">No document uploaded yet.</div>
                                     )}
 
                                     {user?.role === 'student' && (
                                         <div className="tw-space-y-2">
-                                            <div className="tw-text-xs tw-text-gray-600">
+                                            <div className="tw-text-xs tw-text-muted-foreground">
                                                 Upload allowed only when status is PROPOSED or REVISION_REQUIRED.
                                                 {selectedProject.status === 'ARCHIVED' && ' This project is archived (read-only).'}
                                             </div>
@@ -613,7 +613,7 @@ const Dashboard = () => {
                                                     {uploading ? 'Uploading...' : 'Upload'}
                                                 </Button>
                                                 {uploadMessage && (
-                                                    <div className="tw-text-sm tw-text-green-700">{uploadMessage}</div>
+                                                    <div className="tw-text-sm tw-text-emerald-700 dark:tw-text-emerald-400">{uploadMessage}</div>
                                                 )}
                                             </div>
                                         </div>
@@ -621,21 +621,21 @@ const Dashboard = () => {
                                 </div>
 
                                 <div className="tw-space-y-2">
-                                    <div className="tw-text-sm tw-font-medium">Workflow History</div>
+                                    <div className="tw-text-sm tw-font-medium tw-text-foreground">Workflow History</div>
                                     {selectedProjectLogs.length === 0 ? (
-                                        <div className="tw-text-sm tw-text-gray-600">No workflow logs yet.</div>
+                                        <div className="tw-text-sm tw-text-muted-foreground">No workflow logs yet.</div>
                                     ) : (
                                         <div className="tw-space-y-2">
                                             {selectedProjectLogs.map((log) => (
                                                 <div
                                                     key={log._id}
-                                                    className="tw-border tw-border-gray-200 tw-rounded tw-p-3 tw-bg-white"
+                                                    className="tw-border tw-border-border tw-rounded tw-p-3 tw-bg-muted"
                                                 >
-                                                    <div className="tw-text-sm tw-font-medium">
+                                                    <div className="tw-text-sm tw-font-medium tw-text-foreground">
                                                         From {log.fromStatus || 'N/A'} To {log.toStatus || 'N/A'}
                                                     </div>
-                                                    <div className="tw-text-xs tw-text-gray-600">
-                                                        By {log.user?.name || 'Unknown'} • {log.timestamp ? new Date(log.timestamp).toLocaleString() : ''}
+                                                    <div className="tw-text-xs tw-text-muted-foreground">
+                                                        By {log.user?.firstName ? `${log.user.firstName} ${log.user.lastName || ''}`.trim() : 'Unknown'} • {log.timestamp ? new Date(log.timestamp).toLocaleString() : ''}
                                                     </div>
                                                 </div>
                                             ))}
