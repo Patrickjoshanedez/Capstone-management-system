@@ -1,16 +1,28 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
+import {
+    ClipboardList,
+    FileEdit,
+    BookOpen,
+    BarChart3,
+    FlaskConical,
+    FileText,
+    GraduationCap,
+    Check,
+    PartyPopper,
+    Lightbulb,
+} from 'lucide-react';
 
 const ProgressTracker = ({ project }) => {
     // Define all workflow stages
     const stages = [
-        { key: 'proposal', label: 'Proposal', icon: '📋' },
-        { key: 'chapter_1', label: 'Chapter 1', icon: '📝' },
-        { key: 'chapter_2', label: 'Chapter 2', icon: '📖' },
-        { key: 'chapter_3', label: 'Chapter 3', icon: '📊' },
-        { key: 'chapter_4', label: 'Chapter 4', icon: '🔬' },
-        { key: 'chapter_5', label: 'Chapter 5', icon: '📑' },
-        { key: 'final_defense', label: 'Final Defense', icon: '🎓' },
+        { key: 'proposal', label: 'Proposal', icon: ClipboardList },
+        { key: 'chapter_1', label: 'Chapter 1', icon: FileEdit },
+        { key: 'chapter_2', label: 'Chapter 2', icon: BookOpen },
+        { key: 'chapter_3', label: 'Chapter 3', icon: BarChart3 },
+        { key: 'chapter_4', label: 'Chapter 4', icon: FlaskConical },
+        { key: 'chapter_5', label: 'Chapter 5', icon: FileText },
+        { key: 'final_defense', label: 'Final Defense', icon: GraduationCap },
     ];
 
     // Map project status to stage index
@@ -67,7 +79,7 @@ const ProgressTracker = ({ project }) => {
                 </CardHeader>
                 <CardContent>
                     <div className="tw-text-center tw-py-8 tw-text-muted-foreground">
-                        <p className="tw-text-4xl tw-mb-2">📊</p>
+                        <div className="tw-text-indigo-500 tw-mb-2 tw-flex tw-justify-center"><BarChart3 className="tw-w-10 tw-h-10" /></div>
                         <p>No project selected</p>
                         <p className="tw-text-sm">Create or select a project to track progress</p>
                     </div>
@@ -129,7 +141,7 @@ const ProgressTracker = ({ project }) => {
                                 <div
                                     className={`tw-w-10 tw-h-10 tw-rounded-full tw-border-2 tw-flex tw-items-center tw-justify-center tw-text-lg tw-flex-shrink-0 tw-transition-all ${styles.circle}`}
                                 >
-                                    {status === 'completed' ? '✓' : stage.icon}
+                                    {status === 'completed' ? <Check className="tw-w-5 tw-h-5" /> : <stage.icon className="tw-w-5 tw-h-5" />}
                                 </div>
 
                                 {/* Stage info */}
@@ -157,7 +169,7 @@ const ProgressTracker = ({ project }) => {
                 {project.status === 'completed' ? (
                     <div className="tw-mt-6 tw-p-4 tw-bg-emerald-500/10 dark:tw-bg-emerald-500/20 tw-rounded-lg tw-border tw-border-emerald-500/30">
                         <div className="tw-flex tw-items-center tw-gap-2">
-                            <span className="tw-text-2xl">🎉</span>
+                            <PartyPopper className="tw-w-6 tw-h-6 tw-text-emerald-600 dark:tw-text-emerald-400" />
                             <div>
                                 <h4 className="tw-font-semibold tw-text-emerald-800 dark:tw-text-emerald-300">
                                     Capstone Completed!
@@ -171,7 +183,7 @@ const ProgressTracker = ({ project }) => {
                 ) : (
                     <div className="tw-mt-6 tw-p-4 tw-bg-indigo-500/10 dark:tw-bg-indigo-500/20 tw-rounded-lg tw-border tw-border-indigo-500/30">
                         <div className="tw-flex tw-items-center tw-gap-2">
-                            <span className="tw-text-2xl">💡</span>
+                            <Lightbulb className="tw-w-6 tw-h-6 tw-text-indigo-600 dark:tw-text-indigo-400" />
                             <div>
                                 <h4 className="tw-font-semibold tw-text-indigo-800 dark:tw-text-indigo-300">
                                     Next Steps

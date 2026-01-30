@@ -3,6 +3,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import api from '../../services/api';
+import {
+    FileIcon,
+    FileText,
+    FolderOpen,
+    Upload,
+    ClipboardList,
+} from 'lucide-react';
 
 const SubmissionPortal = ({ project, onSubmissionSuccess, showToast }) => {
     const [file, setFile] = useState(null);
@@ -110,9 +117,9 @@ const SubmissionPortal = ({ project, onSubmissionSuccess, showToast }) => {
     };
 
     const getFileIcon = (type) => {
-        if (type.includes('pdf')) return '📄';
-        if (type.includes('word') || type.includes('document')) return '📝';
-        return '📁';
+        if (type.includes('pdf')) return <FileIcon className="tw-w-10 tw-h-10 tw-text-red-500" />;
+        if (type.includes('word') || type.includes('document')) return <FileText className="tw-w-10 tw-h-10 tw-text-blue-500" />;
+        return <FolderOpen className="tw-w-10 tw-h-10 tw-text-muted-foreground" />;
     };
 
     if (!project) {
@@ -123,7 +130,7 @@ const SubmissionPortal = ({ project, onSubmissionSuccess, showToast }) => {
                 </CardHeader>
                 <CardContent>
                     <div className="tw-text-center tw-py-8 tw-text-muted-foreground">
-                        <p className="tw-text-4xl tw-mb-2">📤</p>
+                        <div className="tw-text-indigo-500 tw-mb-2 tw-flex tw-justify-center"><Upload className="tw-w-10 tw-h-10" /></div>
                         <p>No project selected</p>
                         <p className="tw-text-sm">Create or select a project to submit documents</p>
                     </div>
@@ -154,7 +161,7 @@ const SubmissionPortal = ({ project, onSubmissionSuccess, showToast }) => {
                     <div className="tw-mb-6 tw-p-4 tw-bg-muted tw-rounded-lg tw-border tw-border-border">
                         <div className="tw-flex tw-items-center tw-justify-between">
                             <div className="tw-flex tw-items-center tw-gap-3">
-                                <span className="tw-text-2xl">📄</span>
+                                <FileText className="tw-w-6 tw-h-6 tw-text-indigo-500" />
                                 <div>
                                     <h4 className="tw-font-medium tw-text-foreground">
                                         Current Document
@@ -199,7 +206,7 @@ const SubmissionPortal = ({ project, onSubmissionSuccess, showToast }) => {
 
                     {!file ? (
                         <div>
-                            <p className="tw-text-4xl tw-mb-4">📁</p>
+                            <div className="tw-text-indigo-500 tw-mb-4 tw-flex tw-justify-center"><FolderOpen className="tw-w-10 tw-h-10" /></div>
                             <p className="tw-text-lg tw-font-medium tw-text-foreground tw-mb-2">
                                 Drag and drop your document here
                             </p>
@@ -219,9 +226,9 @@ const SubmissionPortal = ({ project, onSubmissionSuccess, showToast }) => {
                     ) : (
                         <div>
                             <div className="tw-flex tw-items-center tw-justify-center tw-gap-4 tw-mb-4">
-                                <span className="tw-text-4xl">
+                                <div>
                                     {getFileIcon(file.type)}
-                                </span>
+                                </div>
                                 <div className="tw-text-left">
                                     <p className="tw-font-medium tw-text-foreground tw-truncate tw-max-w-xs">
                                         {file.name}
@@ -269,7 +276,7 @@ const SubmissionPortal = ({ project, onSubmissionSuccess, showToast }) => {
                 {/* Submission Guidelines */}
                 <div className="tw-mt-6 tw-p-4 tw-bg-indigo-500/10 dark:tw-bg-indigo-500/20 tw-rounded-lg tw-border tw-border-indigo-500/30">
                     <h4 className="tw-font-semibold tw-text-indigo-800 dark:tw-text-indigo-300 tw-mb-2 tw-flex tw-items-center tw-gap-2">
-                        <span>📋</span>
+                        <ClipboardList className="tw-w-4 tw-h-4" />
                         Submission Guidelines
                     </h4>
                     <ul className="tw-text-sm tw-text-indigo-700 dark:tw-text-indigo-400 tw-space-y-1">
@@ -293,7 +300,7 @@ const SubmissionPortal = ({ project, onSubmissionSuccess, showToast }) => {
                                     className="tw-flex tw-items-center tw-justify-between tw-p-3 tw-bg-muted tw-rounded"
                                 >
                                     <div className="tw-flex tw-items-center tw-gap-3">
-                                        <span>📄</span>
+                                        <FileText className="tw-w-5 tw-h-5 tw-text-muted-foreground" />
                                         <div>
                                             <p className="tw-text-sm tw-font-medium tw-text-foreground">
                                                 {sub.stage || 'Document'}

@@ -61,4 +61,12 @@ router.get(
     projectController.getProjectLogs
 );
 
+// Update Proposal Details (Student)
+router.put(
+    '/projects/:projectId/proposal',
+    protect,
+    verifyRole(['student']),
+    projectController.updateProposal
+);
+
 module.exports = router;

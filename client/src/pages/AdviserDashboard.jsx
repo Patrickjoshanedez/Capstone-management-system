@@ -14,7 +14,9 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import ProfileSection from '../components/profile/ProfileSection';
 import NotificationPanel from '../components/notifications/NotificationPanel';
+import ProposalDetails from '../components/proposal/ProposalDetails';
 import Sidebar from '../components/layout/Sidebar';
+import { LayoutDashboard, Briefcase, User, Bell, ClipboardList } from 'lucide-react';
 
 const AdviserDashboard = () => {
     const { user, logout } = useAuth();
@@ -27,6 +29,7 @@ const AdviserDashboard = () => {
 
     const [selectedProject, setSelectedProject] = useState(null);
     const [detailsOpen, setDetailsOpen] = useState(false);
+    const [proposalOpen, setProposalOpen] = useState(false);
     const [projectLogs, setProjectLogs] = useState([]);
     const [logsLoading, setLogsLoading] = useState(false);
 
@@ -116,10 +119,10 @@ const AdviserDashboard = () => {
     };
 
     const adviserNavItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-        { id: 'workspace', label: "Adviser's Workspace", icon: '💼' },
-        { id: 'profile', label: 'Profile', icon: '👤' },
-        { id: 'notifications', label: 'Notifications', icon: '🔔' },
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="tw-w-5 tw-h-5" /> },
+        { id: 'workspace', label: "Adviser's Workspace", icon: <Briefcase className="tw-w-5 tw-h-5" /> },
+        { id: 'profile', label: 'Profile', icon: <User className="tw-w-5 tw-h-5" /> },
+        { id: 'notifications', label: 'Notifications', icon: <Bell className="tw-w-5 tw-h-5" /> },
     ];
 
     const renderContent = () => {
@@ -290,7 +293,7 @@ const AdviserDashboard = () => {
             ) : projects.length === 0 ? (
                 <Card className="tw-bg-card tw-border-border">
                     <CardContent className="tw-py-12 tw-text-center">
-                        <div className="tw-text-4xl tw-mb-4">📋</div>
+                        <div className="tw-text-indigo-500 tw-mb-4 tw-flex tw-justify-center"><ClipboardList className="tw-w-10 tw-h-10" /></div>
                         <p className="tw-text-muted-foreground">No teams assigned to you yet.</p>
                     </CardContent>
                 </Card>
@@ -440,9 +443,28 @@ const AdviserDashboard = () => {
                                     {selectedProject.members?.map((member, idx) => (
                                         <Badge key={idx} variant="secondary">
                                             {member.firstName ? `${member.firstName} ${member.lastName || ''}`.trim() : member}
+                                            {member.email && <span className="tw-ml-1 tw-text-xs tw-opacity-70">({member.email})</span>}
                                         </Badge>
                                     ))}
                                 </div>
+                            </div>
+
+                            {/* View Full Proposal Button */}
+                            <div className="tw-bg-indigo-500/10 dark:tw-bg-indigo-500/20 tw-border tw-border-indigo-500/30 tw-rounded-lg tw-p-4">
+                                <h4 className="tw-font-medium tw-mb-2 tw-text-foreground">Proposal Details</h4>
+                                <p className="tw-text-sm tw-text-muted-foreground tw-mb-3">
+                                    View the complete proposal including background, objectives, methodology, and more.
+                                </p>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setDetailsOpen(false);
+                                        setProposalOpen(true);
+                                    }}
+                                    className="tw-border-indigo-500/50 hover:tw-bg-indigo-500/10"
+                                >
+                                    View Full Proposal
+                                </Button>
                             </div>
 
                             {selectedProject.document?.webViewLink && (
@@ -527,6 +549,21 @@ const AdviserDashboard = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Full Proposal Details Modal */}
+            {selectedProject && (
+                <ProposalDetails
+                    project={selectedProject}
+                    isOpen={proposalOpen}
+                    onClose={() => setProposalOpen(false)}
+                    onUpdate={(updatedProject) => {
+                        setSelectedProject(updatedProject);
+                        loadProjects();
+                    }}
+                    canEdit={false}
+                    showToast={showToast}
+                />
+            )}
         </div>
     );
 };

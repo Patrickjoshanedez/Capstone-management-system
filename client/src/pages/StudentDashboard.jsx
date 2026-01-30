@@ -18,7 +18,17 @@ import NotificationPanel from '../components/notifications/NotificationPanel';
 import ProgressTracker from '../components/progress/ProgressTracker';
 import SimilarityReport from '../components/similarity/SimilarityReport';
 import SubmissionPortal from '../components/submission/SubmissionPortal';
+import ProposalDetails from '../components/proposal/ProposalDetails';
 import Sidebar from '../components/layout/Sidebar';
+import {
+    LayoutDashboard,
+    User,
+    Bell,
+    Upload,
+    BarChart3,
+    ClipboardList,
+    FileEdit,
+} from 'lucide-react';
 
 const StudentDashboard = () => {
     const { user, logout } = useAuth();
@@ -214,12 +224,12 @@ const StudentDashboard = () => {
     };
 
     const studentNavItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-        { id: 'profile', label: 'Profile', icon: '👤' },
-        { id: 'notifications', label: 'Notifications', icon: '🔔' },
-        { id: 'submission', label: 'Submission Portal', icon: '📤' },
-        { id: 'progress', label: 'Progress Tracking', icon: '📊' },
-        { id: 'similarity', label: 'Similarity Report', icon: '📋' },
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="tw-w-5 tw-h-5" /> },
+        { id: 'profile', label: 'Profile', icon: <User className="tw-w-5 tw-h-5" /> },
+        { id: 'notifications', label: 'Notifications', icon: <Bell className="tw-w-5 tw-h-5" /> },
+        { id: 'submission', label: 'Submission Portal', icon: <Upload className="tw-w-5 tw-h-5" /> },
+        { id: 'progress', label: 'Progress Tracking', icon: <BarChart3 className="tw-w-5 tw-h-5" /> },
+        { id: 'similarity', label: 'Similarity Report', icon: <ClipboardList className="tw-w-5 tw-h-5" /> },
     ];
 
     const renderContent = () => {
@@ -365,7 +375,7 @@ const StudentDashboard = () => {
                         </div>
                     ) : projects.length === 0 ? (
                         <div className="tw-text-center tw-py-8">
-                            <div className="tw-text-4xl tw-mb-4">📝</div>
+                            <div className="tw-text-indigo-500 tw-mb-4 tw-flex tw-justify-center"><FileEdit className="tw-w-10 tw-h-10" /></div>
                             <p className="tw-text-muted-foreground">No projects yet. Create your first proposal!</p>
                         </div>
                     ) : (
@@ -482,65 +492,19 @@ const StudentDashboard = () => {
                 </div>
             )}
 
-            {/* Project Details Dialog */}
+            {/* Project Details Dialog - Using ProposalDetails Component */}
             {selectedProject && (
-                <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-                    <DialogContent className="tw-max-w-2xl tw-bg-card tw-border-border">
-                        <DialogHeader>
-                            <DialogTitle className="tw-text-foreground">{selectedProject.title}</DialogTitle>
-                            <DialogDescription className="tw-text-muted-foreground">Project Details and Progress</DialogDescription>
-                        </DialogHeader>
-                        <div className="tw-space-y-4">
-                            <div className="tw-flex tw-gap-2">
-                                <Badge variant={getStatusVariant(selectedProject.status)}>
-                                    {formatStatus(selectedProject.status)}
-                                </Badge>
-                            </div>
-                            <div>
-                                <h4 className="tw-font-medium tw-mb-1 tw-text-foreground">Adviser</h4>
-                                <p className="tw-text-muted-foreground">
-                                    {selectedProject.adviser?.firstName ? `${selectedProject.adviser.firstName} ${selectedProject.adviser.lastName || ''}`.trim() : 'Not assigned'}
-                                </p>
-                            </div>
-                            <div>
-                                <h4 className="tw-font-medium tw-mb-1 tw-text-foreground">Team Members</h4>
-                                <div className="tw-flex tw-flex-wrap tw-gap-2">
-                                    {selectedProject.members?.map((member, idx) => (
-                                        <Badge key={idx} variant="secondary">
-                                            {member.firstName ? `${member.firstName} ${member.lastName || ''}`.trim() : member}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </div>
-                            {selectedProject.plagiarismReport && (
-                                <div>
-                                    <h4 className="tw-font-medium tw-mb-1 tw-text-foreground">Similarity Report</h4>
-                                    <div className="tw-bg-muted tw-rounded tw-p-3">
-                                        <p className="tw-text-foreground">Status: {selectedProject.plagiarismReport.status}</p>
-                                        {selectedProject.plagiarismReport.score !== undefined && (
-                                            <p className="tw-text-foreground">Score: {selectedProject.plagiarismReport.score}%</p>
-                                        )}
-                                        {selectedProject.plagiarismReport.reportUrl && (
-                                            <a
-                                                href={selectedProject.plagiarismReport.reportUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="tw-text-indigo-600 dark:tw-text-indigo-400 hover:tw-underline tw-text-sm"
-                                            >
-                                                View Full Report
-                                            </a>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setDetailsOpen(false)}>
-                                Close
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                <ProposalDetails
+                    project={selectedProject}
+                    isOpen={detailsOpen}
+                    onClose={() => setDetailsOpen(false)}
+                    onUpdate={(updatedProject) => {
+                        setSelectedProject(updatedProject);
+                        loadProjects();
+                    }}
+                    canEdit={true}
+                    showToast={showToast}
+                />
             )}
         </div>
     );

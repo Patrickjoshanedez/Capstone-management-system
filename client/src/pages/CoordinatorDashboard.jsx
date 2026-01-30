@@ -15,6 +15,8 @@ import api from '../services/api';
 import ProfileSection from '../components/profile/ProfileSection';
 import NotificationPanel from '../components/notifications/NotificationPanel';
 import Sidebar from '../components/layout/Sidebar';
+import ProposalDetails from '../components/proposal/ProposalDetails';
+import { LayoutDashboard, Users, User, Bell, ClipboardList, Search } from 'lucide-react';
 
 const CoordinatorDashboard = () => {
     const { user, logout } = useAuth();
@@ -29,6 +31,7 @@ const CoordinatorDashboard = () => {
 
     const [selectedProject, setSelectedProject] = useState(null);
     const [detailsOpen, setDetailsOpen] = useState(false);
+    const [proposalOpen, setProposalOpen] = useState(false);
     const [projectLogs, setProjectLogs] = useState([]);
     const [logsLoading, setLogsLoading] = useState(false);
 
@@ -126,10 +129,10 @@ const CoordinatorDashboard = () => {
     });
 
     const coordinatorNavItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-        { id: 'teams', label: 'All Capstone Teams', icon: '👥' },
-        { id: 'profile', label: 'Profile', icon: '👤' },
-        { id: 'notifications', label: 'Notifications', icon: '🔔' },
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="tw-w-5 tw-h-5" /> },
+        { id: 'teams', label: 'All Capstone Teams', icon: <Users className="tw-w-5 tw-h-5" /> },
+        { id: 'profile', label: 'Profile', icon: <User className="tw-w-5 tw-h-5" /> },
+        { id: 'notifications', label: 'Notifications', icon: <Bell className="tw-w-5 tw-h-5" /> },
     ];
 
     const renderContent = () => {
@@ -252,7 +255,7 @@ const CoordinatorDashboard = () => {
             <Card className="tw-bg-card tw-border-border">
                 <CardHeader>
                     <CardTitle className="tw-flex tw-items-center tw-gap-2 tw-text-foreground">
-                        <span>📋</span> Teams Ready for Archive
+                        <ClipboardList className="tw-w-5 tw-h-5" /> Teams Ready for Archive
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -354,7 +357,7 @@ const CoordinatorDashboard = () => {
                         </div>
                     ) : filteredProjects.length === 0 ? (
                         <div className="tw-text-center tw-py-12">
-                            <div className="tw-text-4xl tw-mb-4">🔍</div>
+                            <div className="tw-text-indigo-500 tw-mb-4 tw-flex tw-justify-center"><Search className="tw-w-10 tw-h-10" /></div>
                             <p className="tw-text-muted-foreground">No teams found matching your criteria.</p>
                         </div>
                     ) : (
@@ -544,6 +547,24 @@ const CoordinatorDashboard = () => {
                                 </div>
                             )}
 
+                            {/* View Full Proposal Button */}
+                            <div className="tw-bg-indigo-500/10 dark:tw-bg-indigo-500/20 tw-border tw-border-indigo-500/30 tw-rounded-lg tw-p-4">
+                                <h4 className="tw-font-medium tw-mb-2 tw-text-foreground">Proposal Details</h4>
+                                <p className="tw-text-sm tw-text-muted-foreground tw-mb-3">
+                                    View the complete proposal including background, objectives, methodology, and more.
+                                </p>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setDetailsOpen(false);
+                                        setProposalOpen(true);
+                                    }}
+                                    className="tw-border-indigo-500/50 hover:tw-bg-indigo-500/10"
+                                >
+                                    View Full Proposal
+                                </Button>
+                            </div>
+
                             {selectedProject.plagiarismReport && (
                                 <div>
                                     <h4 className="tw-font-medium tw-mb-2 tw-text-foreground">Plagiarism Report</h4>
@@ -614,6 +635,21 @@ const CoordinatorDashboard = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Full Proposal Details Modal */}
+            {selectedProject && (
+                <ProposalDetails
+                    project={selectedProject}
+                    isOpen={proposalOpen}
+                    onClose={() => setProposalOpen(false)}
+                    onUpdate={(updatedProject) => {
+                        setSelectedProject(updatedProject);
+                        loadProjects();
+                    }}
+                    canEdit={false}
+                    showToast={showToast}
+                />
+            )}
         </div>
     );
 };

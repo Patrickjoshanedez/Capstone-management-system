@@ -151,8 +151,8 @@ exports.listProjects = async (req, res) => {
         }
 
         const projects = await Project.find(query)
-            .populate('members', 'name email role')
-            .populate('adviser', 'name email role')
+            .populate('members', 'firstName lastName email role')
+            .populate('adviser', 'firstName lastName email role')
             .sort({ createdAt: -1 });
 
         return res.status(200).json({ projects });
@@ -166,8 +166,8 @@ exports.getProjectById = async (req, res) => {
         const { projectId } = req.params;
 
         const project = await Project.findById(projectId)
-            .populate('members', 'name email role')
-            .populate('adviser', 'name email role');
+            .populate('members', 'firstName lastName email role')
+            .populate('adviser', 'firstName lastName email role');
 
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
@@ -272,7 +272,7 @@ exports.getProjectLogs = async (req, res) => {
         }
 
         const logs = await WorkflowLog.find({ project: projectId })
-            .populate('user', 'name email role')
+            .populate('user', 'firstName lastName email role')
             .sort({ timestamp: -1 });
 
         return res.status(200).json({ logs });
@@ -296,8 +296,8 @@ exports.checkTitleSimilarity = async (req, res) => {
 
         // Get all existing project titles
         const existingProjects = await Project.find({}, 'title status members adviser')
-            .populate('members', 'name email')
-            .populate('adviser', 'name email');
+            .populate('members', 'firstName lastName email')
+            .populate('adviser', 'firstName lastName email');
 
         // Calculate similarity scores
         const results = [];
@@ -313,7 +313,7 @@ exports.checkTitleSimilarity = async (req, res) => {
                     similarity: Math.round(similarity),
                     status: project.status,
                     isInDevelopment: !['ARCHIVED', 'FINAL_SUBMITTED'].includes(project.status),
-                    members: project.members?.map(m => m.name) || [],
+                    members: project.members?.map(m => `${m.firstName} ${m.lastName}`.trim()) || [],
                 });
             }
         }
@@ -401,3 +401,68 @@ function calculateSimilarity(str1, str2) {
     // Combine both metrics (weighted average)
     return Math.max(wordSimilarity, levenshteinSimilarity);
 }
+
+// @desc    Update proposal details
+// @route   PUT /api/v1/projects/:projectId/proposal
+// @access  Private (Student - project member only)
+exports.updateProposal = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { proposal } = req.body;
+
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        // Only project members can update proposal
+        const userId = getIdString(req.user._id);
+        const isMember = project.members.some(member => getIdString(member) === userId);
+        
+        if (!isMember) {
+            return res.status(403).json({ message: 'Only project members can update the proposal' });
+        }
+
+        // Only allow updates in certain statuses
+        if (!['PROPOSED', 'REVISION_REQUIRED'].includes(project.status)) {
+            return res.status(400).json({ 
+                message: 'Proposal can only be edited when status is PROPOSED or REVISION_REQUIRED' 
+            });
+        }
+
+        // Update proposal fields
+        if (proposal) {
+            project.proposal = {
+                ...project.proposal?.toObject?.() || {},
+                ...proposal,
+                methodology: {
+                    ...project.proposal?.methodology?.toObject?.() || {},
+                    ...proposal.methodology,
+                    techStack: {
+                        ...project.proposal?.methodology?.techStack?.toObject?.() || {},
+                        ...proposal.methodology?.techStack
+                    }
+                },
+                architecture: {
+                    ...project.proposal?.architecture?.toObject?.() || {},
+                    ...proposal.architecture
+                },
+                feasibility: {
+                    ...project.proposal?.feasibility?.toObject?.() || {},
+                    ...proposal.feasibility
+                }
+            };
+        }
+
+        await project.save();
+
+        const updatedProject = await Project.findById(projectId)
+            .populate('members', 'firstName lastName email role')
+            .populate('adviser', 'firstName lastName email role');
+
+        return res.status(200).json({ project: updatedProject });
+    } catch (error) {
+        console.error('Update proposal error:', error);
+        return res.status(500).json({ message: error.message });
+    }
+};

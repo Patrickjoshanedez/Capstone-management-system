@@ -2,19 +2,9 @@ import React from 'react';
 import { Button } from '../ui/button';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
+import { Sun, Moon, LogOut, BookOpen } from 'lucide-react';
 
-// Icons
-const SunIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
-    </svg>
-);
-
-const MoonIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-    </svg>
-);
+// Using Lucide icons for Sun and Moon (imported above)
 
 const Sidebar = ({ navItems, activeSection, onNavigate, user, onLogout }) => {
     const { darkMode, toggleDarkMode } = useTheme();
@@ -25,7 +15,7 @@ const Sidebar = ({ navItems, activeSection, onNavigate, user, onLogout }) => {
             <div className="tw-p-4 tw-border-b tw-border-border">
                 <Link to="/" className="tw-flex tw-items-center tw-gap-2">
                     <div className="tw-w-10 tw-h-10 tw-rounded-xl tw-bg-gradient-to-br tw-from-indigo-500 tw-to-purple-600 tw-flex tw-items-center tw-justify-center tw-shadow-lg">
-                        <span className="tw-text-white tw-font-bold tw-text-lg">PW</span>
+                        <BookOpen className="tw-w-5 tw-h-5 tw-text-white" />
                     </div>
                     <span className="tw-text-lg tw-font-bold tw-text-foreground">
                         Project Workspace
@@ -65,7 +55,7 @@ const Sidebar = ({ navItems, activeSection, onNavigate, user, onLogout }) => {
                                         : 'tw-text-muted-foreground hover:tw-bg-accent hover:tw-text-foreground'
                                 }`}
                             >
-                                <span className="tw-text-lg">{item.icon}</span>
+                                <span className="tw-w-5 tw-h-5 tw-flex tw-items-center tw-justify-center">{item.icon}</span>
                                 <span className="tw-font-medium">{item.label}</span>
                             </button>
                         </li>
@@ -81,9 +71,9 @@ const Sidebar = ({ navItems, activeSection, onNavigate, user, onLogout }) => {
                     className="tw-w-full tw-flex tw-items-center tw-justify-between tw-px-4 tw-py-3 tw-rounded-lg tw-text-muted-foreground hover:tw-bg-accent hover:tw-text-foreground tw-transition-colors tw-duration-200"
                 >
                     <div className="tw-flex tw-items-center tw-gap-3">
-                        {/* Fixed-width emoji container to prevent layout shift */}
-                        <span className="tw-w-6 tw-h-6 tw-flex tw-items-center tw-justify-center tw-text-lg">
-                            {darkMode ? '🌙' : '☀️'}
+                        {/* Icon container */}
+                        <span className="tw-w-5 tw-h-5 tw-flex tw-items-center tw-justify-center">
+                            {darkMode ? <Moon className="tw-w-5 tw-h-5" /> : <Sun className="tw-w-5 tw-h-5" />}
                         </span>
                         {/* Fixed-width text container */}
                         <span className="tw-font-medium tw-w-24">
@@ -93,7 +83,7 @@ const Sidebar = ({ navItems, activeSection, onNavigate, user, onLogout }) => {
                     <div className={`tw-relative tw-w-11 tw-h-6 tw-rounded-full tw-flex-shrink-0 ${darkMode ? 'tw-bg-indigo-600' : 'tw-bg-muted'}`}>
                         <div className={`tw-absolute tw-top-0.5 tw-w-5 tw-h-5 tw-rounded-full tw-bg-white tw-shadow-md tw-transition-transform tw-duration-300 tw-ease-out ${darkMode ? 'tw-translate-x-5' : 'tw-translate-x-0.5'}`}>
                             <div className="tw-w-full tw-h-full tw-flex tw-items-center tw-justify-center tw-text-xs tw-text-muted-foreground">
-                                {darkMode ? <MoonIcon /> : <SunIcon />}
+                                {darkMode ? <Moon className="tw-w-3 tw-h-3" /> : <Sun className="tw-w-3 tw-h-3" />}
                             </div>
                         </div>
                     </div>
@@ -105,7 +95,7 @@ const Sidebar = ({ navItems, activeSection, onNavigate, user, onLogout }) => {
                     className="tw-w-full tw-justify-start tw-gap-2 tw-border-border hover:tw-bg-destructive/10 hover:tw-text-destructive hover:tw-border-destructive/50 tw-transition-all tw-duration-200"
                     onClick={onLogout}
                 >
-                    <span>🚪</span>
+                    <LogOut className="tw-w-4 tw-h-4" />
                     Logout
                 </Button>
             </div>

@@ -3,6 +3,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import api from '../../services/api';
+import {
+    Search,
+    FileText,
+    CheckCircle2,
+    AlertTriangle,
+    AlertCircle,
+} from 'lucide-react';
 
 const SimilarityReport = ({ project, showToast }) => {
     const [report, setReport] = useState(null);
@@ -67,10 +74,10 @@ const SimilarityReport = ({ project, showToast }) => {
         return { text: 'High Similarity', color: 'red' };
     };
 
-    const getScoreEmoji = (score) => {
-        if (score <= 15) return '✅';
-        if (score <= 30) return '⚠️';
-        return '🚨';
+    const getScoreIcon = (score) => {
+        if (score <= 15) return <CheckCircle2 className="tw-w-10 tw-h-10 tw-text-emerald-600 dark:tw-text-emerald-400" />;
+        if (score <= 30) return <AlertTriangle className="tw-w-10 tw-h-10 tw-text-amber-600 dark:tw-text-amber-400" />;
+        return <AlertCircle className="tw-w-10 tw-h-10 tw-text-red-600 dark:tw-text-red-400" />;
     };
 
     if (!project) {
@@ -81,7 +88,7 @@ const SimilarityReport = ({ project, showToast }) => {
                 </CardHeader>
                 <CardContent>
                     <div className="tw-text-center tw-py-8 tw-text-muted-foreground">
-                        <p className="tw-text-4xl tw-mb-2">🔍</p>
+                        <div className="tw-text-indigo-500 tw-mb-2 tw-flex tw-justify-center"><Search className="tw-w-10 tw-h-10" /></div>
                         <p>No project selected</p>
                         <p className="tw-text-sm">Select a project to view similarity reports</p>
                     </div>
@@ -129,7 +136,7 @@ const SimilarityReport = ({ project, showToast }) => {
             <CardContent className="tw-pt-6">
                 {!report ? (
                     <div className="tw-text-center tw-py-8">
-                        <p className="tw-text-4xl tw-mb-4">📄</p>
+                        <div className="tw-text-indigo-500 tw-mb-4 tw-flex tw-justify-center"><FileText className="tw-w-10 tw-h-10" /></div>
                         <h3 className="tw-font-semibold tw-text-foreground tw-mb-2">
                             No Similarity Report Yet
                         </h3>
@@ -146,9 +153,9 @@ const SimilarityReport = ({ project, showToast }) => {
                         <div className={`tw-p-6 tw-rounded-lg tw-border-2 ${getScoreColor(report.overallScore)}`}>
                             <div className="tw-flex tw-items-center tw-justify-between">
                                 <div className="tw-flex tw-items-center tw-gap-4">
-                                    <span className="tw-text-4xl">
-                                        {getScoreEmoji(report.overallScore)}
-                                    </span>
+                                    <div>
+                                        {getScoreIcon(report.overallScore)}
+                                    </div>
                                     <div>
                                         <h3 className="tw-text-3xl tw-font-bold">
                                             {report.overallScore}%

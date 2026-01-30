@@ -3,6 +3,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import api from '../../services/api';
+import {
+    FileText,
+    MessageCircle,
+    RefreshCw,
+    Search,
+    Clock,
+    Bell,
+} from 'lucide-react';
 
 const NotificationPanel = ({ userId, showToast }) => {
     const [notifications, setNotifications] = useState([]);
@@ -92,17 +100,17 @@ const NotificationPanel = ({ userId, showToast }) => {
     const getNotificationIcon = (type) => {
         switch (type) {
             case 'submission':
-                return '📄';
+                return <FileText className="tw-w-6 tw-h-6 tw-text-indigo-500" />;
             case 'feedback':
-                return '💬';
+                return <MessageCircle className="tw-w-6 tw-h-6 tw-text-emerald-500" />;
             case 'status':
-                return '🔄';
+                return <RefreshCw className="tw-w-6 tw-h-6 tw-text-amber-500" />;
             case 'similarity':
-                return '🔍';
+                return <Search className="tw-w-6 tw-h-6 tw-text-purple-500" />;
             case 'deadline':
-                return '⏰';
+                return <Clock className="tw-w-6 tw-h-6 tw-text-red-500" />;
             default:
-                return '🔔';
+                return <Bell className="tw-w-6 tw-h-6 tw-text-muted-foreground" />;
         }
     };
 
@@ -185,7 +193,7 @@ const NotificationPanel = ({ userId, showToast }) => {
             <CardContent className="tw-p-0">
                 {filteredNotifications.length === 0 ? (
                     <div className="tw-p-8 tw-text-center tw-text-muted-foreground">
-                        <p className="tw-text-4xl tw-mb-2">🔔</p>
+                        <div className="tw-text-indigo-500 tw-mb-2 tw-flex tw-justify-center"><Bell className="tw-w-10 tw-h-10" /></div>
                         <p>No {filter !== 'all' ? filter : ''} notifications</p>
                     </div>
                 ) : (

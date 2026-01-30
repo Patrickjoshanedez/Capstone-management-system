@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { User as UserIcon } from 'lucide-react';
 
 const ProfileSection = ({ user, showToast }) => {
     const { login } = useAuth();
@@ -102,7 +103,7 @@ const ProfileSection = ({ user, showToast }) => {
                                         />
                                     ) : (
                                         <div className="tw-w-full tw-h-full tw-flex tw-items-center tw-justify-center tw-text-3xl tw-text-muted-foreground">
-                                            {formData.firstName?.charAt(0)?.toUpperCase() || '👤'}
+                                            {formData.firstName?.charAt(0)?.toUpperCase() || <UserIcon className="tw-w-8 tw-h-8" />}
                                         </div>
                                     )}
                                 </div>

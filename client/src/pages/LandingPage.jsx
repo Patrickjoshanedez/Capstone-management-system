@@ -11,19 +11,22 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '../components/ui/dialog';
+import {
+    BookOpen,
+    FileText,
+    BarChart3,
+    Search,
+    GraduationCap,
+    Users,
+    Briefcase,
+    FileSearch,
+    FileIcon,
+    Cloud,
+    Sun,
+    Moon,
+} from 'lucide-react';
 
-// Icons for dark mode toggle
-const SunIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
-    </svg>
-);
-
-const MoonIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-    </svg>
-);
+// Using Lucide icons for dark mode toggle (Sun, Moon imported above)
 
 const LandingPage = () => {
     const [faqOpen, setFaqOpen] = useState(false);
@@ -79,8 +82,9 @@ const LandingPage = () => {
                 <div className="tw-max-w-7xl tw-mx-auto tw-px-4 sm:tw-px-6 lg:tw-px-8">
                     <div className="tw-flex tw-justify-between tw-items-center tw-h-16">
                         <div className="tw-flex tw-items-center">
-                            <span className="tw-text-xl tw-font-bold tw-text-indigo-600 dark:tw-text-indigo-400">
-                                📚 Project Workspace
+                            <span className="tw-text-xl tw-font-bold tw-text-indigo-600 dark:tw-text-indigo-400 tw-flex tw-items-center tw-gap-2">
+                                <BookOpen className="tw-w-6 tw-h-6" />
+                                Project Workspace
                             </span>
                         </div>
                         <div className="tw-flex tw-items-center tw-gap-4">
@@ -91,7 +95,7 @@ const LandingPage = () => {
                                 aria-label="Toggle dark mode"
                             >
                                 <div className="tw-w-5 tw-h-5 tw-flex tw-items-center tw-justify-center">
-                                    {darkMode ? <SunIcon /> : <MoonIcon />}
+                                    {darkMode ? <Sun className="tw-w-5 tw-h-5" /> : <Moon className="tw-w-5 tw-h-5" />}
                                 </div>
                             </button>
 
@@ -219,7 +223,7 @@ const LandingPage = () => {
                 <div className="tw-grid md:tw-grid-cols-3 tw-gap-8 tw-mb-16">
                     <Card className="tw-border-0 tw-shadow-lg">
                         <CardHeader>
-                            <div className="tw-text-4xl tw-mb-2">📝</div>
+                            <div className="tw-text-indigo-500 tw-mb-2"><FileText className="tw-w-10 tw-h-10" /></div>
                             <CardTitle>Centralized Submission</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -232,7 +236,7 @@ const LandingPage = () => {
 
                     <Card className="tw-border-0 tw-shadow-lg">
                         <CardHeader>
-                            <div className="tw-text-4xl tw-mb-2">📊</div>
+                            <div className="tw-text-emerald-500 tw-mb-2"><BarChart3 className="tw-w-10 tw-h-10" /></div>
                             <CardTitle>Real-time Progress</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -245,7 +249,7 @@ const LandingPage = () => {
 
                     <Card className="tw-border-0 tw-shadow-lg">
                         <CardHeader>
-                            <div className="tw-text-4xl tw-mb-2">🔍</div>
+                            <div className="tw-text-amber-500 tw-mb-2"><Search className="tw-w-10 tw-h-10" /></div>
                             <CardTitle>Originality Check</CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -265,7 +269,7 @@ const LandingPage = () => {
                     <div className="tw-grid md:tw-grid-cols-3 tw-gap-8">
                         <Card className="tw-bg-indigo-500/10 dark:tw-bg-indigo-500/20 tw-border-indigo-500/30">
                             <CardHeader>
-                                <div className="tw-text-3xl tw-mb-2">👨‍🎓</div>
+                                <div className="tw-text-indigo-500 tw-mb-2"><GraduationCap className="tw-w-8 tw-h-8" /></div>
                                 <CardTitle className="tw-text-indigo-900 dark:tw-text-indigo-300">Students</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -291,7 +295,7 @@ const LandingPage = () => {
 
                         <Card className="tw-bg-emerald-500/10 dark:tw-bg-emerald-500/20 tw-border-emerald-500/30">
                             <CardHeader>
-                                <div className="tw-text-3xl tw-mb-2">👨‍🏫</div>
+                                <div className="tw-text-emerald-500 tw-mb-2"><Users className="tw-w-8 tw-h-8" /></div>
                                 <CardTitle className="tw-text-emerald-900 dark:tw-text-emerald-300">Advisers</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -317,7 +321,7 @@ const LandingPage = () => {
 
                         <Card className="tw-bg-purple-500/10 dark:tw-bg-purple-500/20 tw-border-purple-500/30">
                             <CardHeader>
-                                <div className="tw-text-3xl tw-mb-2">👩‍💼</div>
+                                <div className="tw-text-purple-500 tw-mb-2"><Briefcase className="tw-w-8 tw-h-8" /></div>
                                 <CardTitle className="tw-text-purple-900 dark:tw-text-purple-300">Research Coordinators</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -347,7 +351,7 @@ const LandingPage = () => {
                 <Card className="tw-mb-16 tw-border-0 tw-shadow-lg tw-bg-amber-500/10 dark:tw-bg-amber-500/20 tw-border-amber-500/30">
                     <CardContent className="tw-p-8">
                         <div className="tw-flex tw-flex-col md:tw-flex-row tw-items-center tw-gap-8">
-                            <div className="tw-text-6xl">🔎</div>
+                            <div className="tw-text-amber-500"><FileSearch className="tw-w-16 tw-h-16" /></div>
                             <div>
                                 <h3 className="tw-text-2xl tw-font-bold tw-text-foreground tw-mb-4">
                                     Smart Title Similarity Detection
@@ -404,7 +408,7 @@ const LandingPage = () => {
                 <div className="tw-max-w-7xl tw-mx-auto tw-px-4 sm:tw-px-6 lg:tw-px-8">
                     <div className="tw-grid md:tw-grid-cols-3 tw-gap-8">
                         <div>
-                            <h3 className="tw-text-lg tw-font-semibold tw-mb-4">📚 Project Workspace</h3>
+                            <h3 className="tw-text-lg tw-font-semibold tw-mb-4 tw-flex tw-items-center tw-gap-2"><BookOpen className="tw-w-5 tw-h-5" /> Project Workspace</h3>
                             <p className="tw-text-gray-400">
                                 A comprehensive Capstone Management System for academic excellence.
                             </p>
@@ -437,9 +441,9 @@ const LandingPage = () => {
                         <div>
                             <h3 className="tw-text-lg tw-font-semibold tw-mb-4">Integrations</h3>
                             <ul className="tw-space-y-2 tw-text-gray-400">
-                                <li>📄 Google Docs API</li>
-                                <li>🔍 Copyleaks API</li>
-                                <li>☁️ Google Drive Storage</li>
+                                <li className="tw-flex tw-items-center tw-gap-2"><FileIcon className="tw-w-4 tw-h-4" /> Google Docs API</li>
+                                <li className="tw-flex tw-items-center tw-gap-2"><Search className="tw-w-4 tw-h-4" /> Copyleaks API</li>
+                                <li className="tw-flex tw-items-center tw-gap-2"><Cloud className="tw-w-4 tw-h-4" /> Google Drive Storage</li>
                             </ul>
                         </div>
                     </div>
