@@ -28,7 +28,21 @@ import {
     BarChart3,
     ClipboardList,
     FileEdit,
+    Users,
+    BookOpen,
+    Lightbulb,
+    Search,
+    Monitor,
+    Columns,
 } from 'lucide-react';
+import TeamFormation from '../components/team/TeamFormation';
+import ChapterSubmission from '../components/chapters/ChapterSubmission';
+import TopicMarketplace from '../components/topics/TopicMarketplace';
+import FinalSubmission from '../components/capstone4/FinalSubmission';
+import RepositorySearch from '../components/repository/RepositorySearch';
+import GapAnalysisDashboard from '../components/gap-analysis/GapAnalysisDashboard';
+import PrototypeViewer from '../components/prototypes/PrototypeViewer';
+import SplitScreenViewer from '../components/viewer/SplitScreenViewer';
 
 const StudentDashboard = () => {
     const { user, logout } = useAuth();
@@ -225,15 +239,76 @@ const StudentDashboard = () => {
 
     const studentNavItems = [
         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="tw-w-5 tw-h-5" /> },
+        { id: 'team', label: 'My Team', icon: <Users className="tw-w-5 tw-h-5" /> },
+        { id: 'chapters', label: 'Chapter Submissions', icon: <BookOpen className="tw-w-5 tw-h-5" /> },
+        { id: 'browseTopics', label: 'Browse Topics', icon: <Lightbulb className="tw-w-5 tw-h-5" /> },
         { id: 'profile', label: 'Profile', icon: <User className="tw-w-5 tw-h-5" /> },
         { id: 'notifications', label: 'Notifications', icon: <Bell className="tw-w-5 tw-h-5" /> },
         { id: 'submission', label: 'Submission Portal', icon: <Upload className="tw-w-5 tw-h-5" /> },
+        { id: 'finalSubmission', label: 'Final Submission', icon: <FileEdit className="tw-w-5 tw-h-5" /> },
+        { id: 'repository', label: 'Research Repository', icon: <BookOpen className="tw-w-5 tw-h-5" /> },
+        { id: 'gapAnalysis', label: 'Gap Analysis', icon: <Search className="tw-w-5 tw-h-5" /> },
+        { id: 'prototypes', label: 'Prototypes', icon: <Monitor className="tw-w-5 tw-h-5" /> },
+        { id: 'splitViewer', label: 'Document Viewer', icon: <Columns className="tw-w-5 tw-h-5" /> },
         { id: 'progress', label: 'Progress Tracking', icon: <BarChart3 className="tw-w-5 tw-h-5" /> },
         { id: 'similarity', label: 'Similarity Report', icon: <ClipboardList className="tw-w-5 tw-h-5" /> },
     ];
 
     const renderContent = () => {
         switch (activeSection) {
+            case 'team':
+                return <TeamFormation user={user} showToast={showToast} />;
+            case 'chapters':
+                return projects.length > 0 ? (
+                    <ChapterSubmission
+                        project={projects[0]}
+                        onUpdate={loadProjects}
+                        showToast={showToast}
+                    />
+                ) : (
+                    <div className="tw-text-center tw-py-12 tw-text-muted-foreground">
+                        Create a project first to start submitting chapters.
+                    </div>
+                );
+            case 'browseTopics':
+                return <TopicMarketplace user={user} showToast={showToast} />;
+            case 'finalSubmission':
+                return projects.length > 0 ? (
+                    <FinalSubmission
+                        project={projects[0]}
+                        onUpdate={loadProjects}
+                        showToast={showToast}
+                        user={user}
+                    />
+                ) : (
+                    <div className="tw-text-center tw-py-12 tw-text-muted-foreground">
+                        Create a project first to access final submission.
+                    </div>
+                );
+            case 'repository':
+                return <RepositorySearch user={user} showToast={showToast} />;
+            case 'gapAnalysis':
+                return <GapAnalysisDashboard showToast={showToast} />;
+            case 'prototypes':
+                return projects.length > 0 ? (
+                    <PrototypeViewer
+                        project={projects[0]}
+                        canEdit={true}
+                        showToast={showToast}
+                    />
+                ) : (
+                    <div className="tw-text-center tw-py-12 tw-text-muted-foreground">
+                        Create a project first to manage prototypes.
+                    </div>
+                );
+            case 'splitViewer':
+                return projects.length > 0 ? (
+                    <SplitScreenViewer project={projects[0]} />
+                ) : (
+                    <div className="tw-text-center tw-py-12 tw-text-muted-foreground">
+                        Create a project first to use the document viewer.
+                    </div>
+                );
             case 'profile':
                 return <ProfileSection user={user} showToast={showToast} />;
             case 'notifications':
@@ -519,6 +594,16 @@ const getStatusVariant = (status) => {
         APPROVED_FOR_DEFENSE: 'default',
         FINAL_SUBMITTED: 'default',
         ARCHIVED: 'outline',
+        TOPIC_SELECTION: 'secondary',
+        CHAPTER_1_DRAFT: 'secondary', CHAPTER_1_REVIEW: 'default', CHAPTER_1_APPROVED: 'default',
+        CHAPTER_2_DRAFT: 'secondary', CHAPTER_2_REVIEW: 'default', CHAPTER_2_APPROVED: 'default',
+        CHAPTER_3_DRAFT: 'secondary', CHAPTER_3_REVIEW: 'default', CHAPTER_3_APPROVED: 'default',
+        PROPOSAL_CONSOLIDATION: 'default', PROPOSAL_DEFENSE: 'default', PROPOSAL_DEFENDED: 'default',
+        CAPSTONE2_IN_PROGRESS: 'secondary', CAPSTONE2_REVIEW: 'default', CAPSTONE2_APPROVED: 'default',
+        CAPSTONE3_IN_PROGRESS: 'secondary', CAPSTONE3_REVIEW: 'default', CAPSTONE3_APPROVED: 'default',
+        FINAL_COMPILATION: 'default', PLAGIARISM_CHECK: 'default', FINAL_DEFENSE: 'default',
+        FINAL_APPROVED: 'default', CREDENTIAL_UPLOAD: 'default',
+        PROJECT_RESET: 'destructive',
     };
     return variants[status] || 'secondary';
 };
@@ -531,8 +616,18 @@ const formatStatus = (status) => {
         APPROVED_FOR_DEFENSE: 'Approved for Defense',
         FINAL_SUBMITTED: 'Final Submitted',
         ARCHIVED: 'Archived',
+        TOPIC_SELECTION: 'Topic Selection',
+        CHAPTER_1_DRAFT: 'Ch.1 Draft', CHAPTER_1_REVIEW: 'Ch.1 Review', CHAPTER_1_APPROVED: 'Ch.1 Approved',
+        CHAPTER_2_DRAFT: 'Ch.2 Draft', CHAPTER_2_REVIEW: 'Ch.2 Review', CHAPTER_2_APPROVED: 'Ch.2 Approved',
+        CHAPTER_3_DRAFT: 'Ch.3 Draft', CHAPTER_3_REVIEW: 'Ch.3 Review', CHAPTER_3_APPROVED: 'Ch.3 Approved',
+        PROPOSAL_CONSOLIDATION: 'Consolidation', PROPOSAL_DEFENSE: 'Proposal Defense', PROPOSAL_DEFENDED: 'Proposal Defended',
+        CAPSTONE2_IN_PROGRESS: 'Capstone 2 In Progress', CAPSTONE2_REVIEW: 'Capstone 2 Review', CAPSTONE2_APPROVED: 'Capstone 2 Approved',
+        CAPSTONE3_IN_PROGRESS: 'Capstone 3 In Progress', CAPSTONE3_REVIEW: 'Capstone 3 Review', CAPSTONE3_APPROVED: 'Capstone 3 Approved',
+        FINAL_COMPILATION: 'Final Compilation', PLAGIARISM_CHECK: 'Plagiarism Check', FINAL_DEFENSE: 'Final Defense',
+        FINAL_APPROVED: 'Final Approved', CREDENTIAL_UPLOAD: 'Credential Upload',
+        PROJECT_RESET: 'Project Reset',
     };
-    return labels[status] || status;
+    return labels[status] || status?.replace(/_/g, ' ') || status;
 };
 
 export default StudentDashboard;

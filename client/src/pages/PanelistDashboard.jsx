@@ -16,11 +16,11 @@ import ProfileSection from '../components/profile/ProfileSection';
 import NotificationPanel from '../components/notifications/NotificationPanel';
 import ProposalDetails from '../components/proposal/ProposalDetails';
 import Sidebar from '../components/layout/Sidebar';
-import { LayoutDashboard, Briefcase, User, Bell, ClipboardList, MessageSquare, Loader2, BookOpen, Columns } from 'lucide-react';
-import ChapterReview from '../components/chapters/ChapterReview';
+import { LayoutDashboard, User, Bell, ClipboardList, MessageSquare, Loader2, Lightbulb, Columns } from 'lucide-react';
+import TopicCreator from '../components/topics/TopicCreator';
 import SplitScreenViewer from '../components/viewer/SplitScreenViewer';
 
-const AdviserDashboard = () => {
+const PanelistDashboard = () => {
     const { user, logout } = useAuth();
 
     const [projects, setProjects] = useState([]);
@@ -34,11 +34,10 @@ const AdviserDashboard = () => {
     const [proposalOpen, setProposalOpen] = useState(false);
     const [projectLogs, setProjectLogs] = useState([]);
     const [logsLoading, setLogsLoading] = useState(false);
-    
+
     // Comment/Feedback dialog state
     const [feedbackOpen, setFeedbackOpen] = useState(false);
     const [feedbackComment, setFeedbackComment] = useState('');
-    const [feedbackAction, setFeedbackAction] = useState(null); // { projectId, newStatus }
     const [feedbackLoading, setFeedbackLoading] = useState(false);
 
     const showToast = useCallback((type, message) => {
@@ -102,25 +101,28 @@ const AdviserDashboard = () => {
         }
     };
 
-    // Open feedback dialog for revision requests
-    const openFeedbackDialog = (projectId, newStatus) => {
-        setFeedbackAction({ projectId, newStatus });
+    // Open feedback dialog for adding comments
+    const openFeedbackDialog = () => {
         setFeedbackComment('');
         setFeedbackOpen(true);
     };
 
     // Handle feedback submission
     const submitFeedback = async () => {
-        if (!feedbackAction) return;
-        
+        if (!selectedProject || !feedbackComment.trim()) return;
+
         try {
             setFeedbackLoading(true);
-            await handleStatusChange(feedbackAction.projectId, feedbackAction.newStatus, feedbackComment);
+            await api.patch(`/projects/${selectedProject._id}/status`, {
+                status: selectedProject.status,
+                comment: feedbackComment,
+            });
+            showToast('success', 'Feedback submitted successfully');
             setFeedbackOpen(false);
             setFeedbackComment('');
-            setFeedbackAction(null);
+            await loadProjectLogs(selectedProject._id);
         } catch (err) {
-            // Error already handled in handleStatusChange
+            showToast('error', err.response?.data?.message || 'Failed to submit feedback');
         } finally {
             setFeedbackLoading(false);
         }
@@ -129,15 +131,11 @@ const AdviserDashboard = () => {
     // Calculate statistics
     const statistics = {
         total: projects.length,
-        inProposal: projects.filter(p => p.status === 'PROPOSED').length,
-        waitingReview: projects.filter(p => p.status === 'ADVISER_REVIEW').length,
-        needsRevision: projects.filter(p => p.status === 'REVISION_REQUIRED').length,
-        approved: projects.filter(p => p.status === 'APPROVED_FOR_DEFENSE').length,
-        finalSubmitted: projects.filter(p => p.status === 'FINAL_SUBMITTED').length,
-        archived: projects.filter(p => p.status === 'ARCHIVED').length,
+        awaitingDefense: projects.filter(p => p.status === 'APPROVED_FOR_DEFENSE').length,
+        completed: projects.filter(p => p.status === 'FINAL_SUBMITTED' || p.status === 'ARCHIVED').length,
     };
 
-    // Calculate chapter progress (mock - in real app, this would come from actual chapter data)
+    // Calculate project progress
     const getProjectProgress = (project) => {
         const statusProgress = {
             PROPOSED: 10,
@@ -150,10 +148,10 @@ const AdviserDashboard = () => {
         return statusProgress[project.status] || 0;
     };
 
-    const adviserNavItems = [
+    const panelistNavItems = [
         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="tw-w-5 tw-h-5" /> },
-        { id: 'workspace', label: "Adviser's Workspace", icon: <Briefcase className="tw-w-5 tw-h-5" /> },
-        { id: 'chapterReview', label: 'Chapter Review', icon: <BookOpen className="tw-w-5 tw-h-5" /> },
+        { id: 'projects', label: 'Assigned Projects', icon: <ClipboardList className="tw-w-5 tw-h-5" /> },
+        { id: 'createTopics', label: 'Create Topics', icon: <Lightbulb className="tw-w-5 tw-h-5" /> },
         { id: 'splitViewer', label: 'Document Viewer', icon: <Columns className="tw-w-5 tw-h-5" /> },
         { id: 'profile', label: 'Profile', icon: <User className="tw-w-5 tw-h-5" /> },
         { id: 'notifications', label: 'Notifications', icon: <Bell className="tw-w-5 tw-h-5" /> },
@@ -165,27 +163,10 @@ const AdviserDashboard = () => {
                 return <ProfileSection user={user} showToast={showToast} />;
             case 'notifications':
                 return <NotificationPanel user={user} />;
-            case 'workspace':
-                return renderWorkspace();
-            case 'chapterReview':
-                return projects.length > 0 ? (
-                    <div className="tw-space-y-6">
-                        {projects.map((project) => (
-                            <div key={project._id}>
-                                <h3 className="tw-text-lg tw-font-semibold tw-text-foreground tw-mb-3">{project.title}</h3>
-                                <ChapterReview
-                                    project={project}
-                                    onUpdate={loadProjects}
-                                    showToast={showToast}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="tw-text-center tw-py-12 tw-text-muted-foreground">
-                        No assigned projects with chapter submissions.
-                    </div>
-                );
+            case 'projects':
+                return renderProjects();
+            case 'createTopics':
+                return <TopicCreator showToast={showToast} />;
             case 'splitViewer':
                 return projects.length > 0 ? (
                     <SplitScreenViewer project={projects[0]} />
@@ -204,58 +185,34 @@ const AdviserDashboard = () => {
             {/* Overall Statistics */}
             <div>
                 <h2 className="tw-text-xl tw-font-semibold tw-mb-4 tw-text-foreground">Overall Statistics</h2>
-                <div className="tw-grid tw-grid-cols-2 md:tw-grid-cols-4 lg:tw-grid-cols-7 tw-gap-4">
+                <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-3 tw-gap-4">
                     <Card className="tw-bg-indigo-500/10 dark:tw-bg-indigo-500/20 tw-border-indigo-500/30">
                         <CardContent className="tw-p-4 tw-text-center">
                             <div className="tw-text-3xl tw-font-bold tw-text-indigo-600 dark:tw-text-indigo-400">{statistics.total}</div>
-                            <div className="tw-text-sm tw-text-indigo-700 dark:tw-text-indigo-300">Total Teams</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="tw-bg-slate-500/10 dark:tw-bg-slate-500/20 tw-border-slate-500/30">
-                        <CardContent className="tw-p-4 tw-text-center">
-                            <div className="tw-text-3xl tw-font-bold tw-text-slate-600 dark:tw-text-slate-400">{statistics.inProposal}</div>
-                            <div className="tw-text-sm tw-text-slate-700 dark:tw-text-slate-300">In Proposal</div>
+                            <div className="tw-text-sm tw-text-indigo-700 dark:tw-text-indigo-300">Total Assigned</div>
                         </CardContent>
                     </Card>
                     <Card className="tw-bg-amber-500/10 dark:tw-bg-amber-500/20 tw-border-amber-500/30">
                         <CardContent className="tw-p-4 tw-text-center">
-                            <div className="tw-text-3xl tw-font-bold tw-text-amber-600 dark:tw-text-amber-400">{statistics.waitingReview}</div>
-                            <div className="tw-text-sm tw-text-amber-700 dark:tw-text-amber-300">Waiting Review</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="tw-bg-orange-500/10 dark:tw-bg-orange-500/20 tw-border-orange-500/30">
-                        <CardContent className="tw-p-4 tw-text-center">
-                            <div className="tw-text-3xl tw-font-bold tw-text-orange-600 dark:tw-text-orange-400">{statistics.needsRevision}</div>
-                            <div className="tw-text-sm tw-text-orange-700 dark:tw-text-orange-300">Needs Revision</div>
+                            <div className="tw-text-3xl tw-font-bold tw-text-amber-600 dark:tw-text-amber-400">{statistics.awaitingDefense}</div>
+                            <div className="tw-text-sm tw-text-amber-700 dark:tw-text-amber-300">Awaiting Defense</div>
                         </CardContent>
                     </Card>
                     <Card className="tw-bg-emerald-500/10 dark:tw-bg-emerald-500/20 tw-border-emerald-500/30">
                         <CardContent className="tw-p-4 tw-text-center">
-                            <div className="tw-text-3xl tw-font-bold tw-text-emerald-600 dark:tw-text-emerald-400">{statistics.approved}</div>
-                            <div className="tw-text-sm tw-text-emerald-700 dark:tw-text-emerald-300">Approved</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="tw-bg-purple-500/10 dark:tw-bg-purple-500/20 tw-border-purple-500/30">
-                        <CardContent className="tw-p-4 tw-text-center">
-                            <div className="tw-text-3xl tw-font-bold tw-text-purple-600 dark:tw-text-purple-400">{statistics.finalSubmitted}</div>
-                            <div className="tw-text-sm tw-text-purple-700 dark:tw-text-purple-300">Final Submitted</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="tw-bg-cyan-500/10 dark:tw-bg-cyan-500/20 tw-border-cyan-500/30">
-                        <CardContent className="tw-p-4 tw-text-center">
-                            <div className="tw-text-3xl tw-font-bold tw-text-cyan-600 dark:tw-text-cyan-400">{statistics.archived}</div>
-                            <div className="tw-text-sm tw-text-cyan-700 dark:tw-text-cyan-300">Archived</div>
+                            <div className="tw-text-3xl tw-font-bold tw-text-emerald-600 dark:tw-text-emerald-400">{statistics.completed}</div>
+                            <div className="tw-text-sm tw-text-emerald-700 dark:tw-text-emerald-300">Completed</div>
                         </CardContent>
                     </Card>
                 </div>
             </div>
 
-            {/* Teams Requiring Action */}
+            {/* Projects Awaiting Defense */}
             <Card className="tw-bg-card tw-border-border">
                 <CardHeader>
                     <CardTitle className="tw-flex tw-items-center tw-gap-2 tw-text-foreground">
                         <span className="tw-text-amber-500">⚡</span>
-                        Teams Awaiting Your Review
+                        Projects Awaiting Defense
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -267,13 +224,13 @@ const AdviserDashboard = () => {
                         </div>
                     ) : (
                         <div className="tw-space-y-3">
-                            {projects.filter(p => p.status === 'ADVISER_REVIEW').length === 0 ? (
+                            {projects.filter(p => p.status === 'APPROVED_FOR_DEFENSE').length === 0 ? (
                                 <div className="tw-text-center tw-py-6 tw-text-muted-foreground">
-                                    No teams awaiting review at the moment.
+                                    No projects awaiting defense at the moment.
                                 </div>
                             ) : (
                                 projects
-                                    .filter(p => p.status === 'ADVISER_REVIEW')
+                                    .filter(p => p.status === 'APPROVED_FOR_DEFENSE')
                                     .map((project) => (
                                         <div
                                             key={project._id}
@@ -292,7 +249,7 @@ const AdviserDashboard = () => {
                                                         variant="outline"
                                                         onClick={() => openProjectDetails(project)}
                                                     >
-                                                        Review
+                                                        View Details
                                                     </Button>
                                                 </div>
                                             </div>
@@ -307,7 +264,7 @@ const AdviserDashboard = () => {
             {/* Progress Overview */}
             <Card className="tw-bg-card tw-border-border">
                 <CardHeader>
-                    <CardTitle className="tw-text-foreground">Team Progress Overview (Chapters 1-5)</CardTitle>
+                    <CardTitle className="tw-text-foreground">Project Progress Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="tw-space-y-4">
@@ -336,12 +293,12 @@ const AdviserDashboard = () => {
         </div>
     );
 
-    const renderWorkspace = () => (
+    const renderProjects = () => (
         <div className="tw-space-y-6">
             <div className="tw-flex tw-justify-between tw-items-center">
-                <h2 className="tw-text-xl tw-font-semibold tw-text-foreground">Assigned Capstone Teams</h2>
+                <h2 className="tw-text-xl tw-font-semibold tw-text-foreground">Assigned Projects</h2>
                 <div className="tw-text-sm tw-text-muted-foreground">
-                    {projects.length} team{projects.length !== 1 ? 's' : ''} assigned to you
+                    {projects.length} project{projects.length !== 1 ? 's' : ''} assigned to you
                 </div>
             </div>
 
@@ -355,7 +312,7 @@ const AdviserDashboard = () => {
                 <Card className="tw-bg-card tw-border-border">
                     <CardContent className="tw-py-12 tw-text-center">
                         <div className="tw-text-indigo-500 tw-mb-4 tw-flex tw-justify-center"><ClipboardList className="tw-w-10 tw-h-10" /></div>
-                        <p className="tw-text-muted-foreground">No teams assigned to you yet.</p>
+                        <p className="tw-text-muted-foreground">No projects assigned to you yet.</p>
                     </CardContent>
                 </Card>
             ) : (
@@ -418,7 +375,7 @@ const AdviserDashboard = () => {
                                             className="tw-w-full"
                                             onClick={() => openProjectDetails(project)}
                                         >
-                                            {project.status === 'ADVISER_REVIEW' ? 'Review Now' : 'View Details'}
+                                            View Details
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -433,7 +390,7 @@ const AdviserDashboard = () => {
     return (
         <div className="tw-min-h-screen tw-bg-background tw-flex tw-transition-colors tw-duration-300">
             <Sidebar
-                navItems={adviserNavItems}
+                navItems={panelistNavItems}
                 activeSection={activeSection}
                 onNavigate={setActiveSection}
                 user={user}
@@ -445,10 +402,10 @@ const AdviserDashboard = () => {
                     <div className="tw-flex tw-justify-between tw-items-center">
                         <div>
                             <h1 className="tw-text-2xl tw-font-bold tw-text-foreground">
-                                {adviserNavItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
+                                {panelistNavItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
                             </h1>
                             <p className="tw-text-sm tw-text-muted-foreground">
-                                Welcome back, {user?.firstName || 'Adviser'}
+                                Panelist View &mdash; Welcome back, {user?.firstName || 'Panelist'}
                             </p>
                         </div>
                     </div>
@@ -482,7 +439,7 @@ const AdviserDashboard = () => {
                 <DialogContent className="tw-max-w-2xl tw-max-h-[80vh] tw-overflow-y-auto tw-bg-card tw-border-border">
                     <DialogHeader>
                         <DialogTitle className="tw-text-foreground">{selectedProject?.title}</DialogTitle>
-                        <DialogDescription className="tw-text-muted-foreground">Review and manage this project</DialogDescription>
+                        <DialogDescription className="tw-text-muted-foreground">View project details and provide feedback</DialogDescription>
                     </DialogHeader>
 
                     {selectedProject && (
@@ -542,39 +499,27 @@ const AdviserDashboard = () => {
                                 </div>
                             )}
 
-                            {/* Adviser Actions */}
-                            {selectedProject.status === 'ADVISER_REVIEW' && (
-                                <div className="tw-bg-muted tw-rounded-lg tw-p-4">
-                                    <h4 className="tw-font-medium tw-mb-3 tw-text-foreground">Review Actions</h4>
-                                    <div className="tw-flex tw-gap-2">
+                            {/* Panelist Feedback Action */}
+                            <div className="tw-bg-muted tw-rounded-lg tw-p-4">
+                                <h4 className="tw-font-medium tw-mb-3 tw-text-foreground">Panelist Actions</h4>
+                                <div className="tw-flex tw-gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={openFeedbackDialog}
+                                    >
+                                        <MessageSquare className="tw-w-4 tw-h-4 tw-mr-2" />
+                                        Add Comment
+                                    </Button>
+                                    {selectedProject.status === 'APPROVED_FOR_DEFENSE' && (
                                         <Button
-                                            variant="destructive"
-                                            onClick={() => openFeedbackDialog(selectedProject._id, 'REVISION_REQUIRED')}
-                                        >
-                                            <MessageSquare className="tw-w-4 tw-h-4 tw-mr-2" />
-                                            Request Revision
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleStatusChange(selectedProject._id, 'APPROVED_FOR_DEFENSE')}
+                                            onClick={() => handleStatusChange(selectedProject._id, 'FINAL_SUBMITTED')}
                                             className="tw-bg-indigo-600 hover:tw-bg-indigo-700 tw-text-white"
                                         >
-                                            Approve for Defense
+                                            Mark Final Submitted
                                         </Button>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
-
-                            {selectedProject.status === 'APPROVED_FOR_DEFENSE' && (
-                                <div className="tw-bg-muted tw-rounded-lg tw-p-4">
-                                    <h4 className="tw-font-medium tw-mb-3 tw-text-foreground">Final Review</h4>
-                                    <Button
-                                        onClick={() => handleStatusChange(selectedProject._id, 'FINAL_SUBMITTED')}
-                                        className="tw-bg-indigo-600 hover:tw-bg-indigo-700 tw-text-white"
-                                    >
-                                        Mark Final Submitted
-                                    </Button>
-                                </div>
-                            )}
+                            </div>
 
                             {/* Workflow History */}
                             <div>
@@ -596,6 +541,11 @@ const AdviserDashboard = () => {
                                                 <div className="tw-text-muted-foreground">
                                                     {log.user?.firstName ? `${log.user.firstName} ${log.user.lastName || ''}`.trim() : 'Unknown'} • {new Date(log.timestamp).toLocaleString()}
                                                 </div>
+                                                {log.comment && (
+                                                    <div className="tw-mt-1 tw-text-xs tw-text-muted-foreground tw-italic">
+                                                        "{log.comment}"
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -612,7 +562,7 @@ const AdviserDashboard = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Full Proposal Details Modal */}
+            {/* Full Proposal Details Modal (read-only) */}
             {selectedProject && (
                 <ProposalDetails
                     project={selectedProject}
@@ -632,27 +582,27 @@ const AdviserDashboard = () => {
                 <DialogContent className="tw-bg-card tw-border-border sm:tw-max-w-lg">
                     <DialogHeader>
                         <DialogTitle className="tw-flex tw-items-center tw-gap-2 tw-text-foreground">
-                            <MessageSquare className="tw-w-5 tw-h-5 tw-text-amber-500" />
-                            Request Revision
+                            <MessageSquare className="tw-w-5 tw-h-5 tw-text-indigo-500" />
+                            Add Feedback
                         </DialogTitle>
                         <DialogDescription>
-                            Provide feedback for the student to address in their revision.
+                            Provide feedback or comments for this project. This will be recorded in the workflow history.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="tw-py-4">
                         <label className="tw-block tw-text-sm tw-font-medium tw-text-foreground tw-mb-2">
-                            Revision Feedback <span className="tw-text-red-500">*</span>
+                            Feedback <span className="tw-text-red-500">*</span>
                         </label>
                         <textarea
                             value={feedbackComment}
                             onChange={(e) => setFeedbackComment(e.target.value)}
-                            placeholder="Describe what needs to be revised or improved..."
+                            placeholder="Enter your feedback or comments about this project..."
                             className="tw-w-full tw-min-h-[120px] tw-px-3 tw-py-2 tw-bg-background tw-border tw-border-border tw-rounded-md tw-text-foreground placeholder:tw-text-muted-foreground focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-indigo-500 focus:tw-border-transparent tw-resize-none"
                             disabled={feedbackLoading}
                         />
                         <p className="tw-text-xs tw-text-muted-foreground tw-mt-1">
-                            This feedback will be sent to the student and recorded in the workflow history.
+                            This feedback will be recorded in the project workflow history.
                         </p>
                     </div>
 
@@ -665,9 +615,9 @@ const AdviserDashboard = () => {
                             Cancel
                         </Button>
                         <Button
-                            variant="destructive"
                             onClick={submitFeedback}
                             disabled={!feedbackComment.trim() || feedbackLoading}
+                            className="tw-bg-indigo-600 hover:tw-bg-indigo-700 tw-text-white"
                         >
                             {feedbackLoading ? (
                                 <>
@@ -675,7 +625,7 @@ const AdviserDashboard = () => {
                                     Submitting...
                                 </>
                             ) : (
-                                'Request Revision'
+                                'Submit Feedback'
                             )}
                         </Button>
                     </DialogFooter>
@@ -729,4 +679,4 @@ const formatStatus = (status) => {
     return labels[status] || status?.replace(/_/g, ' ') || status;
 };
 
-export default AdviserDashboard;
+export default PanelistDashboard;

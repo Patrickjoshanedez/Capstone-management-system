@@ -22,3 +22,6 @@ Thumbs.db
 # Temporary
 *.swp
 *.swo
+
+# Claude Code temp files
+tmpclaude-*

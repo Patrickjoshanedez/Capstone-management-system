@@ -258,17 +258,22 @@ exports.loginUser = async (req, res) => {
     try {
         const { email, password, recaptchaToken } = req.body;
 
-        if (!process.env.RECAPTCHA_SECRET_KEY) {
-            return res.status(500).json({ message: 'reCAPTCHA is not configured' });
-        }
+        // Skip reCAPTCHA in development mode
+        const isDev = process.env.NODE_ENV !== 'production';
+        
+        if (!isDev) {
+            if (!process.env.RECAPTCHA_SECRET_KEY) {
+                return res.status(500).json({ message: 'reCAPTCHA is not configured' });
+            }
 
-        if (!String(recaptchaToken || '').trim()) {
-            return res.status(400).json({ message: 'reCAPTCHA required' });
-        }
+            if (!String(recaptchaToken || '').trim()) {
+                return res.status(400).json({ message: 'reCAPTCHA required' });
+            }
 
-        const recaptchaResult = await verifyRecaptchaToken({ token: recaptchaToken, remoteIp: req.ip });
-        if (!recaptchaResult.success) {
-            return res.status(403).json({ message: 'reCAPTCHA verification failed' });
+            const recaptchaResult = await verifyRecaptchaToken({ token: recaptchaToken, remoteIp: req.ip });
+            if (!recaptchaResult.success) {
+                return res.status(403).json({ message: 'reCAPTCHA verification failed' });
+            }
         }
 
         // Check for user email
@@ -553,5 +558,25 @@ exports.updateProfile = async (req, res) => {
     } catch (error) {
         console.error('Update profile error:', error);
         res.status(500).json({ message: 'Failed to update profile' });
+    }
+};
+
+// List users (Coordinator only)
+exports.listUsers = async (req, res) => {
+    try {
+        const { role, department } = req.query;
+        const query = {};
+
+        if (role) query.role = role;
+        if (department) query.department = department;
+
+        const users = await User.find(query)
+            .select('firstName lastName email role department yearLevel createdAt')
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({ users });
+    } catch (error) {
+        console.error('List users error:', error);
+        return res.status(500).json({ message: 'Failed to load users' });
     }
 };

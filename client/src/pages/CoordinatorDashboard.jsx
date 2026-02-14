@@ -16,7 +16,12 @@ import ProfileSection from '../components/profile/ProfileSection';
 import NotificationPanel from '../components/notifications/NotificationPanel';
 import Sidebar from '../components/layout/Sidebar';
 import ProposalDetails from '../components/proposal/ProposalDetails';
-import { LayoutDashboard, Users, User, Bell, ClipboardList, Search } from 'lucide-react';
+import TopicCreator from '../components/topics/TopicCreator';
+import DeadlineManager from '../components/deadlines/DeadlineManager';
+import ReportsDashboard from '../components/reports/ReportsDashboard';
+import LegacyUpload from '../components/legacy/LegacyUpload';
+import UserManagement from '../components/admin/UserManagement';
+import { LayoutDashboard, Users, User, Bell, ClipboardList, Search, UserPlus, FileText, Lightbulb, Loader2, CheckCircle, XCircle, Calendar, BarChart3, Archive, Shield } from 'lucide-react';
 
 const CoordinatorDashboard = () => {
     const { user, logout } = useAuth();
@@ -34,6 +39,18 @@ const CoordinatorDashboard = () => {
     const [proposalOpen, setProposalOpen] = useState(false);
     const [projectLogs, setProjectLogs] = useState([]);
     const [logsLoading, setLogsLoading] = useState(false);
+
+    // Team management state
+    const [teams, setTeams] = useState([]);
+    const [teamsLoading, setTeamsLoading] = useState(false);
+    const [orphanedStudents, setOrphanedStudents] = useState([]);
+    const [adoptingStudent, setAdoptingStudent] = useState(null);
+
+    // Title change requests state
+    const [titleRequests, setTitleRequests] = useState([]);
+    const [titleRequestsLoading, setTitleRequestsLoading] = useState(false);
+    const [reviewingRequest, setReviewingRequest] = useState(null);
+    const [reviewComment, setReviewComment] = useState('');
 
     const showToast = useCallback((type, message) => {
         setToast({ type, message });
@@ -74,6 +91,86 @@ const CoordinatorDashboard = () => {
             setLogsLoading(false);
         }
     }, []);
+
+    const loadTeams = useCallback(async () => {
+        setTeamsLoading(true);
+        try {
+            const response = await api.get('/teams');
+            setTeams(response.data?.teams || []);
+        } catch (err) {
+            console.error('Failed to load teams:', err);
+        } finally {
+            setTeamsLoading(false);
+        }
+    }, []);
+
+    const loadOrphanedStudents = useCallback(async () => {
+        try {
+            const usersRes = await api.get('/auth/users?role=student');
+            const students = usersRes.data?.users || [];
+            const teamsRes = await api.get('/teams');
+            const allTeams = teamsRes.data?.teams || [];
+
+            const assignedStudentIds = new Set();
+            allTeams.forEach((team) => {
+                if (team.status !== 'dissolved') {
+                    team.members?.forEach((m) => {
+                        const userId = m.user?._id || m.user;
+                        if (userId) assignedStudentIds.add(String(userId));
+                    });
+                }
+            });
+
+            const orphaned = students.filter((s) => !assignedStudentIds.has(String(s._id)));
+            setOrphanedStudents(orphaned);
+        } catch (err) {
+            console.error('Failed to load orphaned students:', err);
+        }
+    }, []);
+
+    const handleAdoptStudent = async (teamId, studentId) => {
+        setAdoptingStudent(studentId);
+        try {
+            await api.post(`/teams/${teamId}/adopt`, { studentId });
+            showToast('success', 'Student added to team successfully');
+            await loadTeams();
+            await loadOrphanedStudents();
+        } catch (err) {
+            showToast('error', err.response?.data?.message || 'Failed to adopt student');
+        } finally {
+            setAdoptingStudent(null);
+        }
+    };
+
+    const loadTitleRequests = useCallback(async () => {
+        setTitleRequestsLoading(true);
+        try {
+            const response = await api.get('/title-requests');
+            setTitleRequests(response.data?.requests || []);
+        } catch (err) {
+            console.error('Failed to load title requests:', err);
+        } finally {
+            setTitleRequestsLoading(false);
+        }
+    }, []);
+
+    const handleReviewTitleRequest = async (requestId, decision) => {
+        setReviewingRequest(requestId);
+        try {
+            await api.patch(`/title-requests/${requestId}`, {
+                status: decision,
+                reviewComment: reviewComment.trim(),
+            });
+            showToast('success', `Title change request ${decision}`);
+            setReviewComment('');
+            await loadTitleRequests();
+            await loadProjects();
+        } catch (err) {
+            showToast('error', err.response?.data?.message || 'Failed to review title request');
+        } finally {
+            setReviewingRequest(null);
+        }
+    };
 
     const openProjectDetails = async (project) => {
         setSelectedProject(project);
@@ -131,6 +228,13 @@ const CoordinatorDashboard = () => {
     const coordinatorNavItems = [
         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="tw-w-5 tw-h-5" /> },
         { id: 'teams', label: 'All Capstone Teams', icon: <Users className="tw-w-5 tw-h-5" /> },
+        { id: 'teamManagement', label: 'Team Management', icon: <UserPlus className="tw-w-5 tw-h-5" /> },
+        { id: 'titleRequests', label: 'Title Requests', icon: <FileText className="tw-w-5 tw-h-5" /> },
+        { id: 'createTopics', label: 'Create Topics', icon: <Lightbulb className="tw-w-5 tw-h-5" /> },
+        { id: 'deadlines', label: 'Deadlines', icon: <Calendar className="tw-w-5 tw-h-5" /> },
+        { id: 'reports', label: 'Reports', icon: <BarChart3 className="tw-w-5 tw-h-5" /> },
+        { id: 'legacyUpload', label: 'Legacy Upload', icon: <Archive className="tw-w-5 tw-h-5" /> },
+        { id: 'userManagement', label: 'User Management', icon: <Shield className="tw-w-5 tw-h-5" /> },
         { id: 'profile', label: 'Profile', icon: <User className="tw-w-5 tw-h-5" /> },
         { id: 'notifications', label: 'Notifications', icon: <Bell className="tw-w-5 tw-h-5" /> },
     ];
@@ -143,6 +247,20 @@ const CoordinatorDashboard = () => {
                 return <NotificationPanel user={user} />;
             case 'teams':
                 return renderTeamsView();
+            case 'teamManagement':
+                return renderTeamManagement();
+            case 'titleRequests':
+                return renderTitleRequests();
+            case 'createTopics':
+                return <TopicCreator showToast={showToast} />;
+            case 'deadlines':
+                return <DeadlineManager user={user} showToast={showToast} />;
+            case 'reports':
+                return <ReportsDashboard showToast={showToast} />;
+            case 'legacyUpload':
+                return <LegacyUpload showToast={showToast} />;
+            case 'userManagement':
+                return <UserManagement showToast={showToast} />;
             default:
                 return renderDashboard();
         }
@@ -448,6 +566,276 @@ const CoordinatorDashboard = () => {
         </div>
     );
 
+    const renderTeamManagement = () => {
+        // Load data on first render of this section
+        if (teams.length === 0 && !teamsLoading) {
+            loadTeams();
+            loadOrphanedStudents();
+        }
+
+        return (
+            <div className="tw-space-y-6">
+                {/* Orphaned Students */}
+                <Card className="tw-bg-card tw-border-border">
+                    <CardHeader>
+                        <CardTitle className="tw-flex tw-items-center tw-gap-2 tw-text-foreground">
+                            <UserPlus className="tw-w-5 tw-h-5 tw-text-amber-500" />
+                            Unassigned Students ({orphanedStudents.length})
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {orphanedStudents.length === 0 ? (
+                            <div className="tw-text-center tw-py-6 tw-text-muted-foreground">
+                                All students are assigned to teams.
+                            </div>
+                        ) : (
+                            <div className="tw-space-y-3">
+                                {orphanedStudents.map((student) => (
+                                    <div
+                                        key={student._id}
+                                        className="tw-flex tw-justify-between tw-items-center tw-bg-amber-500/10 dark:tw-bg-amber-500/20 tw-border tw-border-amber-500/30 tw-rounded-lg tw-p-4"
+                                    >
+                                        <div>
+                                            <h4 className="tw-font-medium tw-text-foreground">
+                                                {student.firstName} {student.lastName}
+                                            </h4>
+                                            <p className="tw-text-sm tw-text-muted-foreground">{student.email}</p>
+                                        </div>
+                                        <div className="tw-flex tw-items-center tw-gap-2">
+                                            <select
+                                                className="tw-rounded tw-border tw-border-border tw-bg-background tw-text-foreground tw-px-3 tw-py-1.5 tw-text-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-indigo-500"
+                                                id={`team-select-${student._id}`}
+                                                defaultValue=""
+                                            >
+                                                <option value="" disabled>Select team...</option>
+                                                {teams.filter((t) => t.status !== 'dissolved' && t.members.length < t.maxSize).map((t) => (
+                                                    <option key={t._id} value={t._id}>{t.name} ({t.members.length}/{t.maxSize})</option>
+                                                ))}
+                                            </select>
+                                            <Button
+                                                size="sm"
+                                                disabled={adoptingStudent === student._id}
+                                                onClick={() => {
+                                                    const select = document.getElementById(`team-select-${student._id}`);
+                                                    if (select?.value) {
+                                                        handleAdoptStudent(select.value, student._id);
+                                                    } else {
+                                                        showToast('error', 'Please select a team first');
+                                                    }
+                                                }}
+                                                className="tw-bg-indigo-600 hover:tw-bg-indigo-700 tw-text-white"
+                                            >
+                                                {adoptingStudent === student._id ? 'Adding...' : 'Add to Team'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* All Teams Overview */}
+                <Card className="tw-bg-card tw-border-border">
+                    <CardHeader>
+                        <CardTitle className="tw-flex tw-items-center tw-gap-2 tw-text-foreground">
+                            <Users className="tw-w-5 tw-h-5" />
+                            All Teams ({teams.length})
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {teamsLoading ? (
+                            <div className="tw-space-y-2">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="tw-h-16 tw-rounded tw-bg-muted tw-animate-pulse" />
+                                ))}
+                            </div>
+                        ) : teams.length === 0 ? (
+                            <div className="tw-text-center tw-py-6 tw-text-muted-foreground">
+                                No teams have been created yet.
+                            </div>
+                        ) : (
+                            <div className="tw-space-y-3">
+                                {teams.map((team) => (
+                                    <div
+                                        key={team._id}
+                                        className="tw-bg-muted/50 tw-border tw-border-border tw-rounded-lg tw-p-4"
+                                    >
+                                        <div className="tw-flex tw-justify-between tw-items-start">
+                                            <div>
+                                                <div className="tw-flex tw-items-center tw-gap-2 tw-mb-1">
+                                                    <h4 className="tw-font-medium tw-text-foreground">{team.name}</h4>
+                                                    <Badge variant={team.status === 'locked' ? 'default' : team.status === 'forming' ? 'secondary' : 'destructive'}>
+                                                        {team.status}
+                                                    </Badge>
+                                                </div>
+                                                <div className="tw-flex tw-flex-wrap tw-gap-1 tw-mt-1">
+                                                    {team.members?.map((m, idx) => (
+                                                        <Badge key={idx} variant="outline" className="tw-text-xs">
+                                                            {m.user?.firstName ? `${m.user.firstName} ${m.user.lastName || ''}`.trim() : 'Unknown'}
+                                                            {m.role === 'leader' && ' (Leader)'}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="tw-text-sm tw-text-muted-foreground">
+                                                {team.members?.length || 0}/{team.maxSize} members
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    };
+
+    const renderTitleRequests = () => {
+        // Load data on first render of this section
+        if (titleRequests.length === 0 && !titleRequestsLoading) {
+            loadTitleRequests();
+        }
+
+        return (
+            <div className="tw-space-y-6">
+                <Card className="tw-bg-card tw-border-border">
+                    <CardHeader>
+                        <CardTitle className="tw-flex tw-items-center tw-gap-2 tw-text-foreground">
+                            <FileText className="tw-w-5 tw-h-5 tw-text-indigo-500" />
+                            Pending Title Change Requests ({titleRequests.filter(r => r.status === 'pending').length})
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {titleRequestsLoading ? (
+                            <div className="tw-space-y-2">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="tw-h-24 tw-rounded tw-bg-muted tw-animate-pulse" />
+                                ))}
+                            </div>
+                        ) : titleRequests.filter(r => r.status === 'pending').length === 0 ? (
+                            <div className="tw-text-center tw-py-8 tw-text-muted-foreground">
+                                No pending title change requests.
+                            </div>
+                        ) : (
+                            <div className="tw-space-y-4">
+                                {titleRequests.filter(r => r.status === 'pending').map((request) => (
+                                    <div
+                                        key={request._id}
+                                        className="tw-bg-amber-500/10 dark:tw-bg-amber-500/20 tw-border tw-border-amber-500/30 tw-rounded-lg tw-p-4"
+                                    >
+                                        <div className="tw-flex tw-justify-between tw-items-start tw-mb-3">
+                                            <div>
+                                                <div className="tw-text-sm tw-text-muted-foreground tw-mb-1">
+                                                    Requested by: {request.requestedBy?.firstName
+                                                        ? `${request.requestedBy.firstName} ${request.requestedBy.lastName || ''}`.trim()
+                                                        : 'Unknown'}
+                                                </div>
+                                                <div className="tw-space-y-1">
+                                                    <div className="tw-text-sm">
+                                                        <span className="tw-font-medium tw-text-foreground">Current: </span>
+                                                        <span className="tw-text-muted-foreground">{request.currentTitle}</span>
+                                                    </div>
+                                                    <div className="tw-text-sm">
+                                                        <span className="tw-font-medium tw-text-foreground">Proposed: </span>
+                                                        <span className="tw-text-indigo-600 dark:tw-text-indigo-400 tw-font-medium">{request.proposedTitle}</span>
+                                                    </div>
+                                                </div>
+                                                {request.rationale && (
+                                                    <div className="tw-text-sm tw-mt-2">
+                                                        <span className="tw-font-medium tw-text-foreground">Rationale: </span>
+                                                        <span className="tw-text-muted-foreground">{request.rationale}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Badge variant="secondary">
+                                                {new Date(request.createdAt).toLocaleDateString()}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="tw-space-y-2">
+                                            <textarea
+                                                placeholder="Add a review comment (optional)..."
+                                                className="tw-w-full tw-min-h-[60px] tw-px-3 tw-py-2 tw-bg-background tw-border tw-border-border tw-rounded-md tw-text-foreground placeholder:tw-text-muted-foreground focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-indigo-500 focus:tw-border-transparent tw-resize-none tw-text-sm"
+                                                onChange={(e) => setReviewComment(e.target.value)}
+                                            />
+                                            <div className="tw-flex tw-gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleReviewTitleRequest(request._id, 'approved')}
+                                                    disabled={reviewingRequest === request._id}
+                                                    className="tw-bg-emerald-600 hover:tw-bg-emerald-700 tw-text-white"
+                                                >
+                                                    {reviewingRequest === request._id ? (
+                                                        <Loader2 className="tw-w-4 tw-h-4 tw-mr-1 tw-animate-spin" />
+                                                    ) : (
+                                                        <CheckCircle className="tw-w-4 tw-h-4 tw-mr-1" />
+                                                    )}
+                                                    Approve
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="destructive"
+                                                    onClick={() => handleReviewTitleRequest(request._id, 'rejected')}
+                                                    disabled={reviewingRequest === request._id}
+                                                >
+                                                    {reviewingRequest === request._id ? (
+                                                        <Loader2 className="tw-w-4 tw-h-4 tw-mr-1 tw-animate-spin" />
+                                                    ) : (
+                                                        <XCircle className="tw-w-4 tw-h-4 tw-mr-1" />
+                                                    )}
+                                                    Reject
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Recently Reviewed */}
+                {titleRequests.filter(r => r.status !== 'pending').length > 0 && (
+                    <Card className="tw-bg-card tw-border-border">
+                        <CardHeader>
+                            <CardTitle className="tw-text-foreground">Recently Reviewed</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="tw-space-y-3">
+                                {titleRequests.filter(r => r.status !== 'pending').slice(0, 10).map((request) => (
+                                    <div
+                                        key={request._id}
+                                        className="tw-bg-muted/50 tw-border tw-border-border tw-rounded-lg tw-p-3"
+                                    >
+                                        <div className="tw-flex tw-justify-between tw-items-start">
+                                            <div>
+                                                <div className="tw-text-sm">
+                                                    <span className="tw-text-muted-foreground">{request.currentTitle}</span>
+                                                    <span className="tw-mx-2 tw-text-muted-foreground">&rarr;</span>
+                                                    <span className="tw-font-medium tw-text-foreground">{request.proposedTitle}</span>
+                                                </div>
+                                                {request.reviewComment && (
+                                                    <div className="tw-text-xs tw-text-muted-foreground tw-mt-1 tw-italic">
+                                                        &ldquo;{request.reviewComment}&rdquo;
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Badge variant={request.status === 'approved' ? 'default' : 'destructive'}>
+                                                {request.status === 'approved' ? 'Approved' : 'Rejected'}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="tw-min-h-screen tw-bg-background tw-flex tw-transition-colors tw-duration-300">
             <Sidebar
@@ -662,6 +1050,16 @@ const getStatusVariant = (status) => {
         APPROVED_FOR_DEFENSE: 'default',
         FINAL_SUBMITTED: 'default',
         ARCHIVED: 'outline',
+        TOPIC_SELECTION: 'secondary',
+        CHAPTER_1_DRAFT: 'secondary', CHAPTER_1_REVIEW: 'default', CHAPTER_1_APPROVED: 'default',
+        CHAPTER_2_DRAFT: 'secondary', CHAPTER_2_REVIEW: 'default', CHAPTER_2_APPROVED: 'default',
+        CHAPTER_3_DRAFT: 'secondary', CHAPTER_3_REVIEW: 'default', CHAPTER_3_APPROVED: 'default',
+        PROPOSAL_CONSOLIDATION: 'default', PROPOSAL_DEFENSE: 'default', PROPOSAL_DEFENDED: 'default',
+        CAPSTONE2_IN_PROGRESS: 'secondary', CAPSTONE2_REVIEW: 'default', CAPSTONE2_APPROVED: 'default',
+        CAPSTONE3_IN_PROGRESS: 'secondary', CAPSTONE3_REVIEW: 'default', CAPSTONE3_APPROVED: 'default',
+        FINAL_COMPILATION: 'default', PLAGIARISM_CHECK: 'default', FINAL_DEFENSE: 'default',
+        FINAL_APPROVED: 'default', CREDENTIAL_UPLOAD: 'default',
+        PROJECT_RESET: 'destructive',
     };
     return variants[status] || 'secondary';
 };
@@ -674,6 +1072,16 @@ const getStatusColor = (status) => {
         APPROVED_FOR_DEFENSE: 'tw-bg-emerald-500',
         FINAL_SUBMITTED: 'tw-bg-indigo-500',
         ARCHIVED: 'tw-bg-purple-500',
+        TOPIC_SELECTION: 'tw-bg-slate-400',
+        CHAPTER_1_DRAFT: 'tw-bg-blue-400', CHAPTER_1_REVIEW: 'tw-bg-amber-400', CHAPTER_1_APPROVED: 'tw-bg-emerald-400',
+        CHAPTER_2_DRAFT: 'tw-bg-blue-400', CHAPTER_2_REVIEW: 'tw-bg-amber-400', CHAPTER_2_APPROVED: 'tw-bg-emerald-400',
+        CHAPTER_3_DRAFT: 'tw-bg-blue-400', CHAPTER_3_REVIEW: 'tw-bg-amber-400', CHAPTER_3_APPROVED: 'tw-bg-emerald-400',
+        PROPOSAL_CONSOLIDATION: 'tw-bg-teal-500', PROPOSAL_DEFENSE: 'tw-bg-cyan-500', PROPOSAL_DEFENDED: 'tw-bg-cyan-600',
+        CAPSTONE2_IN_PROGRESS: 'tw-bg-blue-500', CAPSTONE2_REVIEW: 'tw-bg-amber-500', CAPSTONE2_APPROVED: 'tw-bg-emerald-500',
+        CAPSTONE3_IN_PROGRESS: 'tw-bg-blue-500', CAPSTONE3_REVIEW: 'tw-bg-amber-500', CAPSTONE3_APPROVED: 'tw-bg-emerald-500',
+        FINAL_COMPILATION: 'tw-bg-violet-500', PLAGIARISM_CHECK: 'tw-bg-rose-500', FINAL_DEFENSE: 'tw-bg-indigo-600',
+        FINAL_APPROVED: 'tw-bg-emerald-600', CREDENTIAL_UPLOAD: 'tw-bg-teal-600',
+        PROJECT_RESET: 'tw-bg-red-500',
     };
     return colors[status] || 'tw-bg-slate-500';
 };
@@ -686,8 +1094,18 @@ const formatStatus = (status) => {
         APPROVED_FOR_DEFENSE: 'Approved',
         FINAL_SUBMITTED: 'Final Submitted',
         ARCHIVED: 'Archived',
+        TOPIC_SELECTION: 'Topic Selection',
+        CHAPTER_1_DRAFT: 'Ch.1 Draft', CHAPTER_1_REVIEW: 'Ch.1 Review', CHAPTER_1_APPROVED: 'Ch.1 Approved',
+        CHAPTER_2_DRAFT: 'Ch.2 Draft', CHAPTER_2_REVIEW: 'Ch.2 Review', CHAPTER_2_APPROVED: 'Ch.2 Approved',
+        CHAPTER_3_DRAFT: 'Ch.3 Draft', CHAPTER_3_REVIEW: 'Ch.3 Review', CHAPTER_3_APPROVED: 'Ch.3 Approved',
+        PROPOSAL_CONSOLIDATION: 'Consolidation', PROPOSAL_DEFENSE: 'Proposal Defense', PROPOSAL_DEFENDED: 'Proposal Defended',
+        CAPSTONE2_IN_PROGRESS: 'Capstone 2', CAPSTONE2_REVIEW: 'Cap.2 Review', CAPSTONE2_APPROVED: 'Cap.2 Approved',
+        CAPSTONE3_IN_PROGRESS: 'Capstone 3', CAPSTONE3_REVIEW: 'Cap.3 Review', CAPSTONE3_APPROVED: 'Cap.3 Approved',
+        FINAL_COMPILATION: 'Final Compilation', PLAGIARISM_CHECK: 'Plagiarism Check', FINAL_DEFENSE: 'Final Defense',
+        FINAL_APPROVED: 'Final Approved', CREDENTIAL_UPLOAD: 'Credential Upload',
+        PROJECT_RESET: 'Project Reset',
     };
-    return labels[status] || status;
+    return labels[status] || status?.replace(/_/g, ' ') || status;
 };
 
 export default CoordinatorDashboard;

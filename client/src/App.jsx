@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
 import StudentDashboard from './pages/StudentDashboard';
 import AdviserDashboard from './pages/AdviserDashboard';
+import PanelistDashboard from './pages/PanelistDashboard';
 import CoordinatorDashboard from './pages/CoordinatorDashboard';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -29,18 +30,19 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     const dashboardRoutes = {
       student: '/student/dashboard',
       adviser: '/adviser/dashboard',
+      panelist: '/panelist/dashboard',
       coordinator: '/coordinator/dashboard',
     };
     return <Navigate to={dashboardRoutes[user.role] || '/login'} />;
   }
-  
+
   return children;
 };
 
 // Redirect to role-based dashboard
 const DashboardRedirect = () => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="tw-min-h-screen tw-flex tw-items-center tw-justify-center tw-bg-background">
@@ -48,12 +50,13 @@ const DashboardRedirect = () => {
       </div>
     );
   }
-  
+
   if (!user) return <Navigate to="/login" />;
-  
+
   const dashboardRoutes = {
     student: '/student/dashboard',
     adviser: '/adviser/dashboard',
+    panelist: '/panelist/dashboard',
     coordinator: '/coordinator/dashboard',
   };
   
@@ -82,15 +85,25 @@ function App() {
       />
       
       {/* Adviser Routes */}
-      <Route 
-        path="/adviser/dashboard" 
+      <Route
+        path="/adviser/dashboard"
         element={
           <ProtectedRoute allowedRoles={['adviser']}>
             <AdviserDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
+      {/* Panelist Routes */}
+      <Route
+        path="/panelist/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['panelist']}>
+            <PanelistDashboard />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Coordinator Routes */}
       <Route 
         path="/coordinator/dashboard" 

@@ -11,6 +11,7 @@ import {
     DialogTitle,
 } from '../ui/dialog';
 import api from '../../services/api';
+import GoogleDocsPanel from '../googledocs/GoogleDocsPanel';
 import {
     BookOpen,
     Target,
@@ -235,6 +236,14 @@ const ProposalDetails = ({ project, isOpen, onClose, onUpdate, canEdit = false, 
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Google Docs Integration */}
+                    <GoogleDocsPanel 
+                        project={project}
+                        onUpdate={onUpdate}
+                        showToast={showToast}
+                        canManage={canEdit || project.adviser?._id === project.members?.[0]?._id}
+                    />
 
                     {/* Show empty state or editing form */}
                     {!hasProposalContent() && !isEditing ? (
