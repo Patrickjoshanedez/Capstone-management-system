@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/card';
 import api from '../services/api';
-import ReCAPTCHA from 'react-google-recaptcha';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -18,8 +17,6 @@ const Register = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
-    const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-    const [recaptchaToken, setRecaptchaToken] = useState('');
     const navigate = useNavigate();
     const { login } = useAuth();
 
@@ -47,23 +44,10 @@ const Register = () => {
         setError('');
         setSuccess('');
 
-        if (!recaptchaSiteKey) {
-            setError('reCAPTCHA is not configured');
-            return;
-        }
-
-        if (!recaptchaToken) {
-            setError('Please complete the reCAPTCHA');
-            return;
-        }
-
         setLoading(true);
 
         try {
-            const response = await api.post('/auth/register', {
-                ...formData,
-                recaptchaToken,
-            });
+            const response = await api.post('/auth/register', formData);
 
             if (response.data.requiresOTP) {
                 setOtpEmail(response.data.email);
@@ -326,17 +310,6 @@ const Register = () => {
                             </select>
                         </div>
 
-                        <div className="tw-flex tw-justify-center">
-                            {recaptchaSiteKey ? (
-                                <ReCAPTCHA
-                                    sitekey={recaptchaSiteKey}
-                                    onChange={(token) => setRecaptchaToken(token || '')}
-                                    onExpired={() => setRecaptchaToken('')}
-                                />
-                            ) : (
-                                <div className="tw-text-xs tw-text-red-600 dark:tw-text-red-400">reCAPTCHA is not configured.</div>
-                            )}
-                        </div>
                         <Button type="submit" className="tw-w-full" disabled={loading}>
                             {loading ? 'Sending OTP...' : 'Register'}
                         </Button>

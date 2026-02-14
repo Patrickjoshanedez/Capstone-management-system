@@ -75,20 +75,7 @@ const generateToken = (id) => {
 // @access  Public
 exports.registerUser = async (req, res) => {
     try {
-        const { firstName, lastName, email, password, role, department, recaptchaToken } = req.body;
-
-        if (!process.env.RECAPTCHA_SECRET_KEY) {
-            return res.status(500).json({ message: 'reCAPTCHA is not configured' });
-        }
-
-        if (!String(recaptchaToken || '').trim()) {
-            return res.status(400).json({ message: 'reCAPTCHA required' });
-        }
-
-        const recaptchaResult = await verifyRecaptchaToken({ token: recaptchaToken, remoteIp: req.ip });
-        if (!recaptchaResult.success) {
-            return res.status(403).json({ message: 'reCAPTCHA verification failed' });
-        }
+        const { firstName, lastName, email, password, role, department } = req.body;
 
         if (!firstName || !lastName || !email || !password || !role) {
             return res.status(400).json({ message: 'Please add all fields' });
