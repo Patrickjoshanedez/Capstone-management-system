@@ -24,12 +24,14 @@ app.use(helmet({
 }));
 
 // CORS configuration for production
+// CLIENT_URL supports comma-separated values for multiple deployments
+const clientUrls = (process.env.CLIENT_URL || '').split(',').map(u => u.trim()).filter(Boolean);
 const allowedOrigins = [
-    process.env.CLIENT_URL,
+    ...clientUrls,
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000'
-].filter(Boolean).map(o => o.trim().replace(/\/+$/, ''));
+].map(o => o.trim().replace(/\/+$/, ''));
 
 console.log('Allowed CORS origins:', allowedOrigins);
 
