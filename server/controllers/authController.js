@@ -35,7 +35,11 @@ const createTransporter = () => {
 // Send OTP email
 const sendOTPEmail = async (email, firstName, otpCode) => {
     const transporter = createTransporter();
-    
+
+    if (!transporter) {
+        throw new Error('SMTP not configured. Set SMTP_USER and SMTP_PASS environment variables.');
+    }
+
     const mailOptions = {
         from: `"Project Workspace" <${process.env.SMTP_USER}>`,
         to: email,

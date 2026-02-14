@@ -9,26 +9,42 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(helmet());
+
+// Helmet with adjustments for Google reCAPTCHA
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "https://www.google.com", "https://www.gstatic.com"],
+            frameSrc: ["'self'", "https://www.google.com", "https://www.gstatic.com"],
+            connectSrc: ["'self'", "https://www.google.com"],
+        },
+    },
+    crossOriginEmbedderPolicy: false,
+}));
 
 // CORS configuration for production
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000'
+].filter(Boolean).map(o => o.trim().replace(/\/+$/, ''));
+
+console.log('Allowed CORS origins:', allowedOrigins);
+
 const corsOptions = {
     origin: function (origin, callback) {
         // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true);
-        
-        const allowedOrigins = [
-            process.env.CLIENT_URL,
-            'http://localhost:5173',
-            'http://localhost:5174',
-            'http://localhost:3000'
-        ].filter(Boolean);
-        
-        if (allowedOrigins.includes(origin)) {
+
+        const normalizedOrigin = origin.trim().replace(/\/+$/, '');
+
+        if (allowedOrigins.includes(normalizedOrigin)) {
             callback(null, true);
         } else {
             console.log('CORS blocked origin:', origin);
-            callback(new Error('Not allowed by CORS'));
+            callback(null, false);
         }
     },
     credentials: true,
