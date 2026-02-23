@@ -1,0 +1,298 @@
+Functional Requirements
+Category
+Requirement ID
+Requirement Description
+Authentication & Profile
+FR-01
+Allows students to register, verify their email via a 6-digit OTP, and log in with a JWT token valid for 30 days.
+
+
+FR-02
+Provide options for the student to reset their password and update their profile.
+Team Management
+FR-03
+Allow a student to create a team, becoming the Team Leader, or join an existing team via invitation.
+
+
+FR-04
+The Team Leader shall be able to invite up to 3 members via email and lock the team once the roster is finalized.
+Project Initiation
+FR-05
+The system shall allow students to create a project title and description, which undergoes an automated Title Similarity Check (Levenshtein Distance).
+
+
+FR-06
+The system shall allow students to revise a title or submit a Title Change Request if high similarity is detected.
+Capstone 1 (Proposal)
+FR-07
+The system shall provide an auto-template for Google Docs collaborative drafting (Chapters 1-3).
+
+
+FR-08
+The system shall allow students to upload chapter documents (DOCX/PDF/TXT, max 25MB) via Google Drive integration.
+
+
+FR-09
+The system shall require a late justification note if the submission is made past the deadline.
+Capstone 2 (Development)
+FR-10
+The system shall track the status of system development (Design, Build, Test Modules).
+
+
+FR-11
+The system shall allow students to upload source code, system design documents, and test results for adviser review.
+Revision & Defense
+FR-12
+The system shall allow students to view adviser/panel feedback and submit revised versions of their work.
+
+
+FR-13
+The system shall track the project status through phases: Proposed, Review, Approved for Defense, and Defended.
+Concurrency & Integrity
+FR-14
+The system shall implement concurrency control to prevent duplicate submissions from different teammates at the same time (HTTP 409 Conflict).
+
+
+FR-15
+The system shall provide a Plagiarism Report showing similarity scores, matched passages, and source links.
+Monitoring & Logs
+FR-16
+The system shall allow students to view a Project Progress Report, Submission History (with versioning), and a full Audit Trail/Logs.
+
+
+FR-17
+The system shall notify students of deadline alerts, approvals, revisions, and comments.
+
+Table 3. Student Functional Requirements
+Non - Functional Requirements
+Req ID
+Non-Functional Requirement (System shall…)
+Category
+NFR01
+The system shall implement JWT (JSON Web Token) authentication with a session persistence of 30 days.
+Security
+NFR02
+Email verification must utilize a 6-digit OTP with a strict expiration window of 10 minutes.
+Security
+NFR03
+The system must utilize Atomic Status Transitions and Atomic Writes to the database to prevent data corruption during concurrent clicks.
+Data Integrity
+NFR04
+The system must handle concurrency conflicts (HTTP 409) by preventing teammates from triggering simultaneous submissions for the same project.
+Availability
+NFR05
+The Title Similarity Check must utilize the Levenshtein Distance algorithm to provide real-time feedback on project uniqueness.
+Performance
+NFR06
+The system must support document uploads through Google Drive integration with a defined file size limit of 25MB per upload.
+Scalability/Storage
+NFR07
+The system must maintain a Full Audit Trail and version history, ensuring every change is logged with a timestamp and the user ID of the uploader.
+Reliability
+NFR08
+The system shall provide automated document templates (Auto-template) for Capstone chapters to ensure formatting consistency.
+Usability
+
+Table 3.1. Student Non-functional Requirements
+Functional Requirements
+Category
+Requirement ID
+Requirement Description
+Authentication
+FR-AD-01
+The system shall allow advisers to log in and log out securely.
+Project Supervision
+FR-AD-02
+The system shall allow advisers to view assigned students and their submitted projects.
+Document Access
+FR-AD-03
+Allow a student to create a team, becoming the Team Leader, or join an existing team via invitation.
+Plagiarism Review
+FR-AD-04
+The Team Leader shall be able to invite up to 3 members via email and lock the team once the roster is finalized.
+Evaluation
+FR-AD-05
+The system shall allow advisers to provide comments and request revisions.
+
+
+FR-AD-06
+The system shall allow advisers to approve or reject submissions.
+Monitoring
+FR-AD-07
+The system shall notify advisers when students submit or resubmit documents.
+
+Table 4. Adviser Functional Requirements
+
+Non - Functional Requirements
+Req ID
+Non-Functional Requirement (System shall…)
+Category
+NFR-
+AD-01
+allow advisers to access submitted documents without noticeable delay.
+Performance
+NFR-
+AD-02
+display plagiarism reports in under 5 seconds after request.
+Performance
+NFR-
+AD-03
+restrict advisers to viewing only assigned student projects.
+Security
+NFR-
+AD-04
+log adviser actions (approvals, rejections, comments).
+Security
+NFR-
+AD-05
+be structured and easy to complete.
+Usability
+NFR-
+AD-06
+provide organized viewing of student submissions.
+Usability
+NFR-
+AD-07
+ be available during academic working hours with minimal downtime.
+Availability
+
+Table 4.1. Adviser Non-functional Requirements
+
+Functional Requirements
+Category
+Requirement ID
+Requirement Description
+Authentication
+FR-PA-01
+The system shall allow panelists to log in and log out securely.
+Project Access
+FR-PA-02
+The system shall allow panelists to view assigned capstone projects.
+Plagiarism Review
+FR-PA-03
+The system shall allow panelists to access plagiarism results.
+Evaluation
+FR-PA-04
+The system shall allow panelists to input evaluation scores based on defined criteria.
+
+
+FR-PA-05
+The system shall allow panelists to provide comments and recommendations.
+Final Decision
+FR-PA-06
+The system shall allow panelists to mark the project as Passed, Passed with Revisions, or Failed.
+Results Submission
+FR-PA-07
+The system shall restrict editing after final evaluation submission unless unlocked by the Admin.
+
+Table 5. Panel Functional Requirements
+
+
+
+Non - Functional Requirements
+Req ID
+Non-Functional Requirement (System shall…)
+Category
+NFR-
+PA-01
+load evaluation forms within 3 seconds.
+Performance
+NFR-
+PA-02
+automatically compute evaluation totals without delay.
+Performance
+NFR-
+PA-03
+ensure that panelists can only evaluate assigned projects.
+Security
+NFR-
+PA-04
+prevent modification of submitted evaluation results unless authorized.
+Security
+NFR-
+PA-05
+follow consistent evaluation criteria format.
+Usability
+NFR-
+PA-06
+allow panelists to review comments before final submission.
+Usability
+NFR-
+PA-07
+automatically save evaluation inputs to prevent data loss.
+Reliability
+
+Table 5.1. Panel Non-functional Requirements
+Functional Requirements
+Category
+Requirement ID
+Requirement Description
+Authentication
+FR-INS-01
+The system shall allow the administrator to log in and log out securely.
+User Management
+FR-INS-02
+The system shall allow the administrator to create, edit, deactivate, and delete user accounts.
+Role Management
+FR-INS-03
+The system shall allow the administrator to assign roles and permissions.
+Project Monitoring
+FR-INS-04
+The system shall allow the administrator to view and monitor all submitted projects.
+Plagiarism Control
+FR-INS-05
+The system shall allow the administrator to set plagiarism threshold percentages.
+Reports
+FR-INS-06
+The system shall allow the administrator to generate system reports (submissions, evaluations, plagiarism results).
+Archive Management
+FR-INS-07
+The system shall allow the administrator to archive completed projects.
+
+Table 6. Instructor Functional Requirements
+Non - Functional Requirements
+Req ID
+Non-Functional Requirement (System shall…)
+Category
+NFR-
+INS-01
+generate system reports within 10 seconds.
+Performance
+NFR-
+INS-02
+support multiple concurrent users without performance degradation.
+Performance
+NFR-
+INS-03
+enforce role-based access control.
+
+
+Security
+NFR-
+INS-04
+maintain a secure audit trail of all system activities.
+Security
+NFR-
+INS-05
+protect stored documents using secure storage protocols.
+
+
+Security
+NFR-
+INS-06
+perform automatic database backups on a scheduled basis.
+Reliability
+NFR-
+INS-07
+ensure data integrity across all transactions.
+Reliability
+NFR-
+INS-08
+be modular to allow future updates and enhancements.
+Maintainability
+NFR-
+INS-09
+maintain structured logs for troubleshooting and debugging.
+Maintainability
+
+Table 6.1. Instructor Non-functional Requirements

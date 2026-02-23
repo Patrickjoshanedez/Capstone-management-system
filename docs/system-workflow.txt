@@ -1,0 +1,490 @@
+System Workflow — "Project Workspace" Capstone Management System
+================================================================
+
+1. System Overview
+------------------
+
+Project Workspace is a MERN-stack (MongoDB, Express, React, Node.js) web application
+that manages the full lifecycle of capstone projects at BukSU's IT department. It tracks
+projects through four capstone phases with a role-based access control (RBAC) system,
+a state-machine-driven project lifecycle, team formation, document management via
+Google Drive, deadline enforcement, and automated notifications.
+
+
+2. User Roles & Access Hierarchy
+---------------------------------
+
+The system defines four roles, each with distinct capabilities:
+
+  Role          | Purpose                      | Key Actions
+  --------------|------------------------------|---------------------------------------------
+  Student       | Produces capstone work       | Create teams, create projects, upload chapters,
+                |                              | submit for review, respond to revisions
+  Adviser       | Guides assigned teams        | Review chapters, approve/request revisions,
+                |                              | comment on proposals, advance projects to defense
+  Panelist      | Evaluates at defense stages  | Grade final defense, review proposals at defense
+                |                              | stage, record verdicts
+  Coordinator   | Administrates the program    | Manage users, assign advisers/panelists, set
+                |                              | deadlines, reset projects, upload legacy data,
+                |                              | view reports
+
+Authentication is enforced via JWT tokens (protect middleware) and role checks
+(verifyRole middleware) on every API route.
+
+
+3. Authentication & Registration Workflow
+------------------------------------------
+
+  User fills registration form
+          |
+          v
+  POST /api/v1/auth/register
+          |
+          +-- Validates fields (firstName, lastName, email, password, role)
+          +-- Checks if email already exists in User collection
+          +-- Hashes password with bcrypt (salt=10)
+          +-- Generates 6-digit OTP
+          +-- Creates PendingRegistration record (auto-expires in 10 min via TTL index)
+          +-- Sends OTP via SMTP email (Nodemailer)
+                  |
+                  v
+  User enters OTP code
+          |
+          v
+  POST /api/v1/auth/verify-otp
+          |
+          +-- Finds PendingRegistration by email
+          +-- Validates OTP hasn't expired
+          +-- Verifies OTP matches
+          +-- Creates real User document (password already hashed)
+          +-- Deletes PendingRegistration
+          +-- Returns JWT token -> user is logged in
+
+Password Reset flow uses a separate code-based system with rate limiting
+(tracked via resetPasswordFailedAttempts and resetPasswordBlockedUntil on
+the User model), and all events are logged in the AuthLog collection.
+
+Login (POST /api/v1/auth/login) validates credentials and returns a JWT
+token valid for 30 days.
+
+
+4. Team Formation Workflow
+---------------------------
+
+Before creating a project, students must form teams:
+
+  Student creates team (becomes "leader")
+          |
+          v
+  POST /api/v1/teams  ->  Team created with status: "forming"
+          |
+          v
+  Leader invites students by email
+          |
+  POST /api/v1/teams/:teamId/invite
+          |
+          +-- Validates invitee is a student
+          +-- Checks invitee is not in another team
+          +-- Adds to team.invitations[] with status: "pending"
+          +-- Sends TEAM_INVITATION notification
+                  |
+                  v
+  Invitee responds (accept/decline)
+          |
+  PATCH /api/v1/teams/:teamId/invitations/:invitationId
+          |
+          +-- If accepted -> adds to team.members[], notifies team
+          +-- If declined -> updates invitation status, notifies leader
+                  |
+                  v
+  Leader locks team (no more changes)
+          |
+  PATCH /api/v1/teams/:teamId/lock  ->  Team status: "locked"
+
+Constraints:
+  - Max team size: 5 members (configurable via maxSize)
+  - Students can only be in one active team
+  - Only the team leader can invite and lock
+  - Coordinator can "adopt" orphaned students into teams
+
+
+5. Project Lifecycle — The State Machine (Core Workflow)
+---------------------------------------------------------
+
+The project follows a strict state machine defined in projectController.js.
+Each status transition has role-based guards.
+
+--- Phase 1: Capstone 1 — Proposal ---
+
+  PROPOSED --(student)--> ADVISER_REVIEW --(adviser)--> REVISION_REQUIRED
+      |                        |                              |
+      |                        |                     (student resubmits)
+      |                        v                              |
+      |                  APPROVED_FOR_DEFENSE <---------------+
+      |                        |
+      |                 (adviser/panelist)
+      |                        v
+      |                  FINAL_SUBMITTED --(coordinator)--> ARCHIVED
+      |
+      +---- OR (structured chapter-by-chapter pathway): --------
+                |
+                v
+          TOPIC_SELECTION --(student)--> CHAPTER_1_DRAFT
+                |
+                v
+          CHAPTER_1_DRAFT --(student)--> CHAPTER_1_REVIEW
+                --(adviser)--> CHAPTER_1_APPROVED  or  REVISION_REQUIRED
+                |
+                v
+          CHAPTER_2_DRAFT -> CHAPTER_2_REVIEW -> CHAPTER_2_APPROVED
+                |
+                v
+          CHAPTER_3_DRAFT -> CHAPTER_3_REVIEW -> CHAPTER_3_APPROVED
+                |
+                v
+          PROPOSAL_CONSOLIDATION --(adviser/coordinator)--> PROPOSAL_DEFENSE
+                |
+                v
+          PROPOSAL_DEFENSE --(adviser/panelist/coordinator)--> PROPOSAL_DEFENDED
+
+
+--- Phase 2: Capstone 2 — Design & Implementation ---
+
+  PROPOSAL_DEFENDED --(coordinator)--> CAPSTONE2_IN_PROGRESS
+          |
+          v
+  CAPSTONE2_IN_PROGRESS --(student)--> CAPSTONE2_REVIEW
+          |
+          v
+  CAPSTONE2_REVIEW --(adviser)--> CAPSTONE2_APPROVED  or  CAPSTONE2_IN_PROGRESS (revision)
+
+
+--- Phase 3: Capstone 3 — Testing & Refinement ---
+
+  CAPSTONE2_APPROVED --(coordinator)--> CAPSTONE3_IN_PROGRESS
+          |
+          v
+  CAPSTONE3_IN_PROGRESS --(student)--> CAPSTONE3_REVIEW
+          |
+          v
+  CAPSTONE3_REVIEW --(adviser)--> CAPSTONE3_APPROVED  or  CAPSTONE3_IN_PROGRESS (revision)
+
+
+--- Phase 4: Capstone 4 — Finalization ---
+
+  CAPSTONE3_APPROVED --(coordinator)--> FINAL_COMPILATION
+          |
+          v
+  FINAL_COMPILATION --(coordinator)--> PLAGIARISM_CHECK
+          |
+          v
+  PLAGIARISM_CHECK --(coordinator)--> FINAL_DEFENSE
+          |
+          v
+  FINAL_DEFENSE --(panelist/coordinator)--> FINAL_APPROVED
+          |
+          v
+  FINAL_APPROVED --(student)--> CREDENTIAL_UPLOAD
+          |
+          v
+  CREDENTIAL_UPLOAD --(coordinator)--> ARCHIVED  (Complete)
+
+
+Transition enforcement happens in updateProjectStatus:
+  1. Looks up STATUS_TRANSITIONS[currentStatus][nextStatus] to get allowed roles
+  2. Verifies the requesting user's role is in the allowed list
+  3. For advisers/panelists, additionally checks they are assigned to the project
+  4. Records the transition in project.statusHistory[] (audit trail)
+  5. Creates a WorkflowLog entry
+  6. Fires notifications (in-app + email) to relevant parties
+
+
+6. Chapter Management Workflow
+-------------------------------
+
+Within each capstone phase, students manage individual chapters:
+
+  Student creates chapter
+  POST /api/v1/projects/:projectId/chapters
+          |
+          v
+  Chapter created: { capstonePhase, chapterNumber, title, status: "draft" }
+          |
+          v
+  Student uploads chapter version (file to Google Drive, metadata stored)
+  POST /api/v1/projects/:projectId/chapters/:chapterId/upload
+          |
+          +-- Chapter status changes to "submitted" -> "under_review"
+          +-- Tracks version history (versionNumber, fileId, webViewLink)
+          +-- Tracks late submissions (isLate, justification)
+                  |
+                  v
+  Adviser reviews chapter
+  PATCH /api/v1/projects/:projectId/chapters/:chapterId/review
+          |
+          +-- Approved -> status: "approved", records approvedAt/approvedBy
+          +-- Revision required -> status: "revision_required", adds adviserFeedback[]
+                  |
+                  v
+  Student revises and re-uploads (new version entry added)
+
+Each chapter tracks:
+  - Multiple versions (with file links, upload timestamps, uploader)
+  - Adviser feedback (content, section, resolved status)
+  - Late remarks (with justification fields)
+
+
+7. Document Locking (Pessimistic Concurrency)
+----------------------------------------------
+
+To prevent editing conflicts when multiple team members work on the same project:
+
+  Student requests lock
+  POST /api/v1/projects/:projectId/lock
+          |
+          +-- If unlocked -> grants lock (stores lockedBy, lockedAt, chapterId)
+          +-- If locked by same user -> refreshes timestamp
+          +-- If locked by another -> returns 409 Conflict
+                  |
+                  v
+  Student finishes editing -> releases lock
+  DELETE /api/v1/projects/:projectId/lock
+          |
+          v
+  If stuck, another student can:
+  POST /api/v1/projects/:projectId/lock/request-unlock  (request unlock)
+          |
+          v
+  Coordinator can force-override:
+  DELETE /api/v1/projects/:projectId/lock/override
+
+
+8. Google Docs Integration
+---------------------------
+
+The system creates and manages Google Docs for collaborative editing:
+
+  POST /api/v1/projects/:projectId/docs/create   -> Creates a Google Doc via Service Account
+  GET  /api/v1/projects/:projectId/docs           -> Gets doc URL and metadata
+  POST /api/v1/projects/:projectId/docs/sync      -> Syncs content back to project
+  POST /api/v1/projects/:projectId/docs/share     -> Shares with additional users
+  DELETE /api/v1/projects/:projectId/docs          -> Deletes the doc
+
+Document metadata is stored in project.googleDocs (documentId, documentUrl, lastSyncedAt).
+
+
+9. Title Similarity Check & Title Change Workflow
+---------------------------------------------------
+
+Before Creating a Project:
+  Students can check their proposed title against existing projects:
+
+  POST /api/v1/projects/check-title
+          |
+          +-- Uses Levenshtein distance + word overlap algorithm
+          +-- Returns similarity scores and matching projects
+          +-- Result types: "unique", "similar", "exists", "in_development"
+
+After Project Creation — Title Changes Require Approval:
+
+  Student requests title change
+  POST /api/v1/projects/:projectId/title-change
+          |
+          +-- Creates TitleChangeRequest (currentTitle, proposedTitle, rationale)
+          +-- Status: "pending"
+                  |
+                  v
+  Coordinator reviews
+  PATCH /api/v1/title-requests/:requestId
+          |
+          +-- Approved -> updates project.title, adds to titleHistory[], locks title
+          +-- Rejected -> returns with reviewComment
+
+
+10. Topic Marketplace
+----------------------
+
+Pre-approved topics are managed as a browsable marketplace:
+
+  Panelist/Coordinator creates topic
+  POST /api/v1/topics
+          |
+          v
+  Topic: { title, description, suggestedOutline, keywords, status: "available" }
+          |
+          v
+  Students browse topics
+  GET /api/v1/topics
+          |
+          v
+  Student claims topic
+  POST /api/v1/topics/:topicId/claim
+          |
+          +-- Topic status -> "claimed", linked to project
+
+
+11. Capstone 4 Finalization Workflow
+-------------------------------------
+
+The final phase includes additional specialized steps:
+
+  Upload academic paper version       -> POST /projects/:id/capstone4/academic
+  Upload journal-format version       -> POST /projects/:id/capstone4/journal
+  Run plagiarism check (coordinator)  -> POST /projects/:id/capstone4/plagiarism-check
+  Record defense verdict              -> POST /projects/:id/capstone4/defense-verdict
+                                          (result: passed/failed/conditional, remarks)
+  Upload credentials                  -> POST /projects/:id/capstone4/credentials
+                                          (clearance, panel_approval, ethics_review,
+                                           hardbound_receipt, etc.)
+
+
+12. Deadline Management
+------------------------
+
+Coordinators set deadlines tied to capstone phases and target statuses:
+
+  Coordinator creates deadline
+  POST /api/v1/deadlines
+          |
+          v
+  Deadline: { title, capstonePhase, targetStatus, dueDate, academicYear }
+          |
+          v
+  All users can check deadlines
+  GET /api/v1/deadlines
+  GET /api/v1/deadlines/check  (checks if a submission is late)
+
+Late submissions are tracked in chapter versions via lateRemarks.
+
+
+13. Notification System
+------------------------
+
+Notifications are triggered automatically by system events:
+
+  Event                    | Notification Type            | Recipients
+  -------------------------|------------------------------|-------------------
+  Submit for review        | PROPOSAL_SUBMITTED           | Adviser
+  Revision requested       | REVISION_REQUESTED           | Team members
+  Proposal approved        | PROPOSAL_APPROVED            | Team members
+  Comment added            | COMMENT_ADDED                | Team members
+  Team invitation          | TEAM_INVITATION              | Invitee
+  Chapter approved         | CHAPTER_APPROVED             | Team members
+  Panelist assigned        | PANELIST_ASSIGNED            | Panelists + Team
+  Lock override            | LOCK_OVERRIDE                | Lock holder
+
+Delivery channels:
+  - In-app — stored in Notification collection, fetched via GET /api/v1/notifications
+  - Email — sent via SMTP (Nodemailer) using styled HTML templates
+
+Users can mark notifications as read, mark all as read, or clear read notifications.
+
+
+14. Repository & Research Gap Analysis
+---------------------------------------
+
+Repository (Past Projects):
+  Archived/final-approved projects form a searchable repository:
+    - Full-text title search
+    - Filter by academic year or keyword
+    - Paginated results
+    - Students see limited fields; coordinators see full data
+
+Gap Analysis:
+  The system analyzes past projects to help students find research gaps:
+    - Keyword frequencies — aggregates keywords across archived projects
+    - Topic clusters — groups projects by shared keywords
+    - Gap suggestions — identifies underexplored areas based on keyword patterns
+
+
+15. Reports & Analytics (Coordinator)
+--------------------------------------
+
+  GET /api/v1/reports/overview     -> Total projects, completion rates, active counts
+  GET /api/v1/reports/by-year      -> Projects grouped by academic year
+  GET /api/v1/reports/by-topic     -> Projects grouped by topic/keyword
+  GET /api/v1/reports/by-author    -> Projects grouped by team members
+  GET /api/v1/reports/export       -> CSV/PDF export of report data
+
+
+16. Administrative Controls (Coordinator)
+------------------------------------------
+
+  Action                        | Endpoint
+  ------------------------------|---------------------------------------------
+  List/search all users         | GET /api/v1/users
+  Change user role              | PATCH /api/v1/users/:userId/role
+  Assign adviser to project     | POST /api/v1/projects/:projectId/assign-adviser
+  Assign panelists to project   | POST /api/v1/projects/:projectId/assign-panelists
+  Reset a project               | POST /api/v1/projects/:projectId/reset
+  Upload legacy projects        | POST /api/v1/legacy/upload
+
+Project Reset archives the current project and creates a fresh copy for the
+same team, starting at TOPIC_SELECTION.
+
+
+17. Frontend Architecture
+--------------------------
+
+  Route                     | Dashboard              | Role
+  --------------------------|------------------------|-------------
+  /student/dashboard        | StudentDashboard       | Student
+  /adviser/dashboard        | AdviserDashboard       | Adviser
+  /panelist/dashboard       | PanelistDashboard      | Panelist
+  /coordinator/dashboard    | CoordinatorDashboard   | Coordinator
+
+The React frontend uses:
+  - React Router v6 with ProtectedRoute wrappers that check authentication and role
+  - Context API (AuthContext) for auth state
+  - Tailwind CSS with tw- prefix for all styling
+  - Component modules for each feature domain: team/, chapters/, proposal/,
+    capstone4/, deadlines/, notifications/, gap-analysis/, reports/,
+    repository/, topics/, similarity/, prototypes/, etc.
+
+
+18. Security & Infrastructure
+------------------------------
+
+  - JWT authentication on all protected routes
+  - bcrypt password hashing (salt rounds: 10)
+  - Helmet for HTTP security headers (CSP for reCAPTCHA)
+  - CORS whitelist from environment configuration
+  - Multer with 25MB limit (memory storage) for file uploads — files stream
+    to Google Drive to stay within the 512MB RAM constraint
+  - AuthLog tracks security-sensitive events (password resets, rate limiting)
+  - Audit trail via statusHistory[] on projects and WorkflowLog collection
+  - MongoDB Atlas (free tier compatible) with MONGO_URI from environment
+  - Health check endpoint at /health for uptime monitoring
+
+
+19. Summary Flow (End-to-End)
+------------------------------
+
+  Register -> Verify OTP -> Login
+       |
+       v
+  Create/Join Team -> Lock Team
+       |
+       v
+  Check Title Similarity -> Create Project (status: PROPOSED)
+       |
+       v
+  Write Chapters (1->2->3) -> Submit for Review -> Adviser Approves/Revises
+       |                                              |
+       v                                              v
+  Consolidate Proposal -> Proposal Defense -> Proposal Defended
+       |
+       v
+  Capstone 2 (Design/Implementation) -> Review -> Approved
+       |
+       v
+  Capstone 3 (Testing/Refinement) -> Review -> Approved
+       |
+       v
+  Capstone 4: Final Compilation -> Plagiarism Check -> Final Defense
+       |
+       v
+  Final Approved -> Upload Credentials -> ARCHIVED (COMPLETE)
+
+Every transition is logged, guarded by role, triggers notifications, and is
+visible to all stakeholders through their respective dashboards.

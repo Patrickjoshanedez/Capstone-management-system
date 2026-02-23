@@ -1,0 +1,546 @@
+================================================================
+CAPSTONE MANAGEMENT SYSTEM — WORKFLOW DIAGRAMS (Mermaid.js)
+================================================================
+Roles: Student | Adviser | Panel | Instructor (Coordinator)
+BukSU Capstone Curriculum:
+  Capstone 1 — Proposal + Chapter 1-3 Writing + Chapter 1-3 Defense
+  Capstone 2 — System Development + System Defense
+  Capstone 3 — Final Defense
+Team Constraint: 1 Leader + max 3 Members = 4 total
+File Uploads: DOCX, PDF, TXT — max 25MB per file
+Tip: Paste each block into https://mermaid.live to render
+================================================================
+
+
+================================================================
+1. STUDENT WORKFLOW
+Functional Requirements: FR-S01 to FR-S74
+================================================================
+
+```mermaid
+flowchart TD
+    START([Student]) --> AUTH
+
+    subgraph AUTH["Authentication (FR-S01 to FR-S07)"]
+        A1[Register\nName, Email, Password, Role] --> A2[Verify Email\n6-digit OTP, 10-min expiry]
+        A2 --> A3{OTP Valid?}
+        A3 -->|No / Expired| A2
+        A3 -->|Yes| A4[Login\nJWT Token — 30 days]
+        A4 --> A5[Student Dashboard]
+    end
+
+    A5 --> TEAM
+    A5 --> SETUP
+    A5 --> CONCUR
+    A5 --> SUP
+
+    subgraph TEAM["Team Formation (FR-S08 to FR-S13)"]
+        direction TB
+        T0{Already in a Team?}
+        T0 -->|No - Start a Team| T1[Create Team\nbecomes Team Leader]
+        T1 --> T2[Invite Members by Email\nmax 3 Members]
+        T2 --> T3[Wait for Acceptances]
+        T3 --> T4[View Team Members and Roles]
+        T4 --> T5{Team Ready?}
+        T5 -->|Yes| T6[Lock Team\n1 Leader + up to 3 Members\nNo further changes after lock]
+
+        T0 -->|No - Received Invite| T7[Receive Team Invitation]
+        T7 --> T8{Accept?}
+        T8 -->|Yes| T9[Joined Team as Member]
+        T8 -->|No| T10[Decline Invitation]
+    end
+
+    T6 --> SETUP
+    T9 --> SETUP
+
+    subgraph SETUP["Project Setup — Topic and Title (FR-S14 to FR-S20)"]
+        direction TB
+        PB[Browse and Claim\nPre-approved Topic from Marketplace] --> P1
+        P1[Create Project\nTitle and Description] --> P2[Title Similarity Check\nLevenshtein Distance / Word Overlap]
+        P2 --> P3{Similarity Result}
+        P3 -->|similar / exists / in_development| P4[Revise Title or\nSubmit Title Change Request]
+        P4 --> P1
+        P3 -->|unique| P5[Status: PROPOSED\nProject Registered — Ready for Cap 1]
+    end
+
+    P5 --> C1
+
+    subgraph CAP1["Capstone 1 — Proposal and Chapter 1-3 Defense (FR-S21 to FR-S35)"]
+        direction TB
+        C1[Write Chapter 1 — Background of Study\nWrite Chapter 2 — Related Literature\nWrite Chapter 3 — Methodology]
+        C1 --> C2[Create Google Docs Collaborative Draft\nAuto-template: Background, Problem, Objectives,\nScope, Methodology, System Architecture, Feasibility]
+        C2 --> C3[Upload Chapter Documents\nDOCX / PDF / TXT — max 25MB\nvia Google Drive]
+        C3 --> C4{Submission Late?}
+        C4 -->|Yes| C4A[Add Late Justification Note\nSystem Flags as Late]
+        C4 -->|No| C5
+        C4A --> C5[Submit Chapters for Adviser Review]
+        C5 --> C6[Status: ADVISER_REVIEW]
+        C6 --> C7{Adviser Decision}
+        C7 -->|Revision Required| C8[Status: REVISION_REQUIRED\nView Section-level Adviser Feedback\nView Revision History per Version]
+        C8 --> C9[Apply Revisions\nNew Version Created with Separate Entry]
+        C9 --> C3
+        C7 -->|Chapters Approved| C10[Status: APPROVED_FOR_DEFENSE]
+        C10 --> C11[Status: PROPOSAL_CONSOLIDATION\nFinalize Full Proposal Document]
+        C11 --> C12[Status: PROPOSAL_DEFENSE\nChapter 1-3 Defense Presentation]
+        C12 --> C13{Panel Verdict}
+        C13 -->|Conditional — Revise| C14[Apply Panel Feedback]
+        C14 --> C11
+        C13 -->|Passed| C15[Status: PROPOSAL_DEFENDED]
+    end
+
+    C15 --> D1
+
+    subgraph CAP2["Capstone 2 — System Development and Defense (FR-S36 to FR-S47)"]
+        direction TB
+        D1[Status: CAPSTONE2_IN_PROGRESS\nBegin System Development]
+        D1 --> D2[Develop the System\nDesign, Build, Test Modules]
+        D2 --> D3[Upload Development Documents\nSystem Design, Source Code, Test Results]
+        D3 --> D3A{Submission Late?}
+        D3A -->|Yes| D3B[Add Late Justification Note]
+        D3A -->|No| D4
+        D3B --> D4[Submit for Adviser Review]
+        D4 --> D5[Status: CAPSTONE2_REVIEW]
+        D5 --> D6{Adviser Decision}
+        D6 -->|Revision| D7[View Adviser Feedback\nApply Revisions]
+        D7 --> D3
+        D6 -->|Approved| D8[Status: CAPSTONE2_APPROVED]
+        D8 --> D9[Status: CAPSTONE2_DEFENSE\nSystem Defense Presentation]
+        D9 --> D10{Panel Verdict}
+        D10 -->|Conditional — Revise| D11[Apply Panel Feedback]
+        D11 --> D8
+        D10 -->|Passed| D12[Status: CAPSTONE2_DEFENDED]
+    end
+
+    D12 --> F1
+
+    subgraph CAP3["Capstone 3 — Final Defense (FR-S48 to FR-S54)"]
+        direction TB
+        F1[Status: FINAL_COMPILATION\nPrepare Final Paper]
+        F1 --> F2[Upload Final Paper\nAcademic Version + Journal Format Version]
+        F2 --> F3[Status: PLAGIARISM_CHECK\nCoordinator Triggers — Copyleaks API]
+        F3 --> F3A[View Plagiarism Report\nSimilarity Score, Matched Passages, Source Links\nView-only Access]
+        F3A --> F4[Status: FINAL_DEFENSE\nFinal Defense Presentation]
+        F4 --> F5{Panel Final Verdict}
+        F5 -->|Conditional — Revise| F6[Apply Final Revisions]
+        F6 --> F4
+        F5 -->|Passed| F7[Status: FINAL_APPROVED]
+        F7 --> F8[Upload Credentials\nClearance, Ethics Review Certificate,\nHardbound Receipt, Panel Approval Form]
+        F8 --> F9[Status: ARCHIVED]
+    end
+
+    subgraph CONCUR["Submission Concurrency Control (FR-S55 to FR-S58)"]
+        direction TB
+        CN1[Initiate Submission\nCap 1 Chapters / Cap 2 Docs / Cap 3 Final Paper] --> CN2{Project Status\nAllows Submission?}
+        CN2 -->|No — Wrong Status| CN3[Block: Submission Rejected\nOnly Allowed from: PROPOSED,\nREVISION_REQUIRED, CAPSTONE2_IN_PROGRESS,\nCAPSTONE2_REVISION, FINAL_COMPILATION]
+        CN3 --> CN1
+        CN2 -->|Yes — Status Valid| CN4{Submission Already\nIn Progress by Teammate?}
+        CN4 -->|Yes — Race Detected| CN5[HTTP 409 Conflict\nTeammate Already Triggered Submission\nRefresh Page — View Current Status]
+        CN4 -->|No — Clear| CN6[Atomic Status Transition\nSingle Atomic Write to Submission Status\nPrevents Duplicate Submission from Concurrent Clicks]
+        CN6 --> CN7[Submission Confirmed\nTimestamp Recorded — All Team Members Notified\nStatus Locked Until Adviser Acts]
+    end
+
+    subgraph SUP["Supporting Actions and Reports (FR-S06, FR-S62 to FR-S74)"]
+        S1[View Project Logs and Full Audit Trail]
+        S2[View Document Version History\nUpload Dates, Uploader, Status per Version]
+        S3[Request Title Change\nSubmit Rationale for Coordinator Approval]
+        S4[Browse Past Projects Repository\nSearch by Title or Keyword — Limited View]
+
+        subgraph SRPT["Generate Reports"]
+            SR1[Project Progress Report\nCurrent Phase, Status, Last Submission Date\nSubmission Timeline vs Deadlines]
+            SR2[Plagiarism Report — View-only\nSimilarity Score as Percentage\nMatched Passages with Source Links\nNumber of Revisions to Reach Approved\nCheck Status: Pending / In Progress / Completed]
+            SR3[Submission History Report\nAll Chapter Versions, Upload Dates\nLate Submission Flags and Justifications]
+        end
+
+        S6[View Notifications\nDeadline Alerts, Approvals, Revisions, Comments\nMark as Read / Mark All / Clear]
+        S7[Reset Password]
+        S8[Update Profile]
+    end
+```
+
+
+================================================================
+2. ADVISER WORKFLOW
+Functional Requirements: FR-A01 to FR-A47
+================================================================
+
+```mermaid
+flowchart TD
+    START([Adviser]) --> AUTH
+
+    subgraph AUTH["Authentication (FR-A01 to FR-A04)"]
+        A1[Login\nEmail and Password\nJWT Token — 30 days] --> A2[Adviser Dashboard\nAll Assigned Projects Overview]
+    end
+
+    A2 --> PROJ
+    A2 --> COLLAB
+    A2 --> RPT
+    A2 --> SUP
+
+    subgraph PROJ["Project Review and Status Management (FR-A05 to FR-A34)"]
+        direction TB
+
+        P1[View All Assigned Projects\nFilter by Status / Phase] --> P2[Select Project]
+        P2 --> P3[View Full Project Details\nCurrent Status, Team Members, History, Submission Log]
+
+        subgraph CAP1R["Capstone 1 — Chapter 1-3 Review (FR-A15 to FR-A24)"]
+            P3 --> R1[View Submitted Chapters 1-3\nAll Versions with Upload Dates]
+            R1 --> R2[Download and Review Chapter Document]
+            R2 --> R3[Access Google Docs\nComment and Review Permissions]
+            R3 --> R4{Review Decision}
+            R4 -->|Request Revision| R5[Add Section-level Feedback\nRevision Notes per Chapter Version]
+            R5 --> R6[Track Feedback Resolution\nOpen / Resolved Status]
+            R6 --> R7[Status: REVISION_REQUIRED\nStudent Team Notified via Email and In-app]
+            R4 -->|Approve Chapters| R8[Status: APPROVED_FOR_DEFENSE]
+            R8 --> R9[Advance to PROPOSAL_CONSOLIDATION]
+            R9 --> R10[Advance to PROPOSAL_DEFENSE\nTriggering Chapter 1-3 Defense]
+        end
+
+        subgraph CAP2R["Capstone 2 — System Development Review (FR-A25 to FR-A29)"]
+            P3 --> S1[View System Development Submission\nDesign Docs, Source Code, Test Plans]
+            S1 --> S2[Download and Review All Documents\nCheck Late Submission Flags]
+            S2 --> S3{Review Decision}
+            S3 -->|Request Revision| S4[Add Feedback and Required Corrections\nper Document Version]
+            S4 --> S5[Status: CAPSTONE2_REVISION\nStudent Notified]
+            S3 -->|Approve| S6[Status: CAPSTONE2_APPROVED]
+            S6 --> S7[Advance to CAPSTONE2_DEFENSE\nSystem Defense]
+        end
+
+        subgraph CAP3R["Capstone 3 — Final Defense Review (FR-A30 to FR-A34)"]
+            P3 --> T1[View Final Paper Submission\nAcademic Version and Journal Format]
+            T1 --> T2[Review Plagiarism Report\nSimilarity Score, Matched Passages, Sources]
+            T2 --> T3[Provide Feedback on Final Paper\nAcademic Quality and Originality Assessment]
+            T3 --> T4{Plagiarism Score Satisfactory?}
+            T4 -->|No — Flag Issue| T5[Flag Project\nNotify Coordinator and Student\nDescribe Plagiarism Concerns]
+            T4 -->|Yes| T6[Endorse Project for FINAL_DEFENSE]
+        end
+    end
+
+    subgraph COLLAB["Collaboration and Feedback (FR-A35 to FR-A37)"]
+        direction TB
+        CL1[Access Google Docs\nComment and Review Permissions Only\nCannot Upload on Behalf of Students]
+        CL2[Add Section-level Feedback\nper Chapter / per Submitted Version]
+        CL3[Share Documents with Co-Advisers]
+        CL4[View Full Revision History\nAll Versions and Feedback Rounds]
+        CL5[Track Feedback Resolution Status\nOpen / Resolved per Comment]
+        CL6[View All Submission Dates\nIncluding Late Submission Flags and Justifications]
+    end
+
+    subgraph RPT["Reports (FR-A38 to FR-A41)"]
+        direction TB
+        RP1[Generate Report for Advised Projects]
+        RP1 --> RP2{Report Type}
+
+        RP2 -->|Progress and Status| RP3[Project Progress Report\nCurrent Phase and Status per Group\nLast Submission Date, Pending Actions\nProjects Stuck in Same Status — Flag if over 14 days]
+
+        RP2 -->|Revision and Turnaround| RP4[Review Turnaround Report\nAverage Time to Provide Feedback per Chapter\nNumber of Revision Rounds per Project\nRevisions Needed Before Approval per Chapter]
+
+        RP2 -->|Submission Compliance| RP5[Submission Timeline Report\nSubmission Dates vs Coordinator Deadlines\nOn-time vs Late — with Justification Notes\nCompliance Rate per Group]
+
+        RP2 -->|Plagiarism Summary| RP6[Plagiarism Integrity Report\nSimilarity Score per Group — Advised Projects Only\nHigh-Risk Flag if Score Exceeds Threshold\nRevision Count to Reach Approved State]
+
+        RP3 & RP4 & RP5 & RP6 --> RP7[Export to CSV or PDF]
+    end
+
+    subgraph SUP["Supporting Actions (FR-A42 to FR-A47)"]
+        SP1[View Project Status and Full Audit Trail]
+        SP2[View Notifications\nProject Assignment, New Submission,\nRevision Fulfilled, Chapter Approved]
+        SP3[Mark Notifications as Read\nMark All / Clear Read]
+        SP4[Reset Password]
+        SP5[Update Profile]
+    end
+```
+
+
+================================================================
+3. PANEL WORKFLOW
+Functional Requirements: FR-P01 to FR-P53
+================================================================
+
+```mermaid
+flowchart TD
+    START([Panel Member]) --> AUTH
+
+    subgraph AUTH["Authentication (FR-P01 to FR-P04)"]
+        A1[Login\nEmail and Password\nJWT Token — 30 days] --> A2[Panel Dashboard\nAssigned Evaluations Overview]
+    end
+
+    A2 --> TOPIC
+    A2 --> EVAL
+    A2 --> CRED
+    A2 --> RPT
+    A2 --> SUP
+
+    subgraph TOPIC["Topic Management (FR-P05 to FR-P11)"]
+        direction TB
+        T1[Create Pre-approved Capstone Topic]
+        T1 --> T2[Define Topic Metadata\nTitle, Description, Suggested Outline, Keywords]
+        T2 --> T3[Publish Topic — Status: Available]
+        T3 --> T4[View Topic List\nAvailable / Claimed / Archived Status]
+        T4 --> T5{Topic Action}
+        T5 -->|Student Claims It| T6[Status: Claimed — Linked to Student Project]
+        T5 -->|Withdraw| T7[Status: Archived]
+        T7 --> T8[Restore — Status: Available]
+    end
+
+    subgraph EVAL["Project Evaluation (FR-P12 to FR-P40)"]
+        direction TB
+
+        E1[View Assigned Projects\nfor Defense Evaluation] --> E2[Select Project]
+        E2 --> E3[View Project Details\nTeam, Submission Docs, Status History]
+
+        subgraph CAP1DEF["Capstone 1 — Chapter 1-3 Defense (FR-P16 to FR-P24)"]
+            E3 --> PD1[Review Submitted Chapters 1-3\nBackground, RRL, Methodology]
+            PD1 --> PD1A[Review Plagiarism Report\nfor Chapter Submissions]
+            PD1A --> PD2[Attend Chapter 1-3 Defense Presentation]
+            PD2 --> PD3[Assess Research Validity\nFeasibility and Scope of Study]
+            PD3 --> PD4{Defense Verdict}
+            PD4 -->|Passed| PD5[Record: Passed\nAdd Evaluator Remarks]
+            PD4 -->|Conditional| PD6[Record: Conditional\nList Specific Revisions Required\nStudent Notified]
+            PD4 -->|Failed| PD7[Record: Failed\nProvide Detailed Remarks]
+        end
+
+        subgraph CAP2DEF["Capstone 2 — System Defense (FR-P25 to FR-P32)"]
+            E3 --> SD1[Review System Documentation\nSystem Design, Development Docs, Test Results]
+            SD1 --> SD2[Attend System Defense Presentation\nSystem Demo Evaluation]
+            SD2 --> SD3[Evaluate System Functionality\nQuality and Completeness]
+            SD3 --> SD4{System Defense Verdict}
+            SD4 -->|Passed| SD5[Record: Passed\nAdd Remarks]
+            SD4 -->|Conditional| SD6[Record: Conditional\nList Required Improvements\nStudent Notified — may Re-present]
+            SD6 --> SD2
+            SD4 -->|Failed| SD7[Record: Failed\nDetailed Remarks]
+        end
+
+        subgraph CAP3DEF["Capstone 3 — Final Defense (FR-P33 to FR-P40)"]
+            E3 --> FD1[Review Final Paper\nAcademic Version and Journal Format]
+            FD1 --> FD2[Attend Final Defense Presentation]
+            FD2 --> FD3[Evaluate System and Research Paper\nOverall Completeness and Academic Quality]
+            FD3 --> FD4{Final Defense Verdict}
+            FD4 -->|Passed| FD5[Record: Passed — Project Approved\nAdd Comprehensive Remarks]
+            FD4 -->|Conditional| FD6[Require Final Revisions\nStudent Notified — Re-present after Revisions]
+            FD6 --> FD2
+            FD4 -->|Failed| FD7[Record: Failed\nProvide Comprehensive Remarks]
+        end
+    end
+
+    subgraph CRED["Credentials Review (FR-P41 to FR-P44)"]
+        direction TB
+        CR1[View Uploaded Student Credentials] --> CR2[Review Each Document]
+        CR2 --> CR3[Ethics Review Certificate]
+        CR2 --> CR4[Hardbound Receipt]
+        CR2 --> CR5[Panel Approval Form]
+        CR2 --> CR6[Other Clearance Documents]
+        CR3 & CR4 & CR5 & CR6 --> CR7[Verify Authenticity and Completeness]
+        CR7 --> CR8[Mark Credentials as Verified]
+    end
+
+    subgraph RPT["Reports (FR-P45 to FR-P48)"]
+        direction TB
+        RP1[Generate Evaluation Report]
+        RP1 --> RP2{Report Type}
+
+        RP2 -->|Evaluation Summary| RP3[All Verdicts and Remarks per Project\nPassed / Conditional / Failed Count per Defense Stage\nRevision Rounds after Conditional Verdicts]
+
+        RP2 -->|Defense Schedule Overview| RP4[Upcoming Defenses Assigned to This Panelist\nProposal Defenses — Cap 1\nSystem Defenses — Cap 2\nFinal Defenses — Cap 3\nDates, Teams, and Submission Status]
+
+        RP2 -->|Workload Overview| RP5[Number of Projects Assigned for Evaluation\nCurrent Pending Evaluations\nCompleted Evaluations per Academic Year]
+
+        RP2 -->|Topic Utilization| RP6[Topics Created vs Claimed by Students\nKeyword Distribution among Student Projects\nUnclaimed Topics Still Available]
+
+        RP3 & RP4 & RP5 & RP6 --> RP7[Export to CSV or PDF]
+    end
+
+    subgraph SUP["Supporting Actions (FR-P49 to FR-P53)"]
+        SP1[View Evaluation History\nPast Verdicts and Remarks per Project]
+        SP2[View Project Status and Audit Trail]
+        SP3[View Notifications\nProject Assignment, Defense Stage Alerts]
+        SP4[Mark Notifications as Read\nMark All / Clear Read]
+        SP5[Reset Password]
+        SP6[Update Profile]
+    end
+```
+
+
+================================================================
+4. INSTRUCTOR (COORDINATOR) WORKFLOW
+Functional Requirements: FR-C01 to FR-C70
+================================================================
+
+```mermaid
+flowchart TD
+    START([Instructor / Coordinator]) --> AUTH
+
+    subgraph AUTH["Authentication (FR-C01 to FR-C04)"]
+        A1[Login\nEmail and Password\nJWT Token — 30 days] --> A2[Coordinator Dashboard\nSystem-wide Overview\nTotal Projects, Active Teams, Pending Actions]
+    end
+
+    A2 --> USERS
+    A2 --> PROJADMIN
+    A2 --> DEADLINE
+    A2 --> SYSCONF
+    A2 --> PLAG
+    A2 --> REPORTS
+    A2 --> REPO
+    A2 --> SUP
+
+    subgraph USERS["User Management (FR-C05 to FR-C10)"]
+        direction TB
+        U1[List and Search All Users\nFilter by Role, Team, Status] --> U2[View User Details\nRole, Team, Assigned Projects]
+        U2 --> U3{User Action}
+        U3 -->|Change Role| U4[Assign New Role\nStudent / Adviser / Panel / Coordinator]
+        U3 -->|Create Account| U5[Create New User Account\nSet Role and Send Invite]
+        U3 -->|Manage Account| U6[Enable or Disable Account]
+        U3 -->|Adopt Orphan Student| U7[Assign Unteamed Student\nto Existing Team]
+    end
+
+    subgraph PROJADMIN["Project Administration (FR-C11 to FR-C23)"]
+        direction TB
+        PA1[View ALL Projects — No Restrictions\nAll Statuses, All Academic Years] --> PA2[Select Project]
+        PA2 --> PA3[Download and View All Student Submissions\nAll Chapters, Docs, Credentials]
+        PA3 --> PA4{Admin Action}
+
+        PA4 -->|Assign Adviser| PA5[Assign Adviser to Project\nSupports Multiple Advisers per Project\nAll Assigned Advisers Notified]
+        PA4 -->|Assign Panel| PA6[Assign Panelists to Project\nAll Assigned Panelists Notified]
+
+        PA4 -->|Title Change Request| PA7[Review Student Title Change Request\nwith Rationale Submitted by Student]
+        PA7 --> PA8{Decision}
+        PA8 -->|Approve| PA9[Update Project Title\nAdd to Title History, Lock Title]
+        PA8 -->|Reject| PA10[Return with Review Comment]
+
+        PA4 -->|Archive| PA11[Set Status: ARCHIVED\nProject Completed]
+        PA4 -->|Reset Project| PA12[Archive Current Version\nCreate Fresh Copy at TOPIC_SELECTION]
+        PA4 -->|Create Directly| PA13[Create Project on Behalf of Team]
+    end
+
+    subgraph DEADLINE["Deadline Management (FR-C24 to FR-C31)"]
+        direction TB
+        DL1[Create Deadline per Capstone Phase\nCap 1 / Cap 2 / Cap 3 Sub-stages] --> DL2[Set Due Date and Target Status]
+        DL2 --> DL3[Associate with Academic Year]
+        DL3 --> DL4[Publish — Students and Advisers Notified]
+        DL4 --> DL5[Modify Deadline if Needed\nAll Affected Users Re-notified]
+        DL4 --> DL6[Monitor Submissions vs Deadlines\nPer Chapter, Per Phase]
+        DL6 --> DL7[View Late Submission Flags\nStudent, Phase, Date, Justification Note]
+    end
+
+    subgraph SYSCONF["System and Document Administration (FR-C32 to FR-C46)"]
+        direction TB
+        SC1[Configure System Settings]
+        SC1 --> SC2[Set Max Team Size\n1 Leader + max 3 Members]
+        SC1 --> SC3[Configure Deadline Policies\nLate Submission Rules]
+        SC1 --> SC4[Configure Notification Preferences\nEmail and In-app Triggers]
+        SC1 --> SC5[Upload Legacy Projects\nHistorical Data Import]
+        SC5 --> SC6[Sync Google Drive\nOrganize Parent Folder Structure\nImport as Read-only Records]
+    end
+
+    subgraph PLAG["Plagiarism Management (FR-C38 to FR-C43)"]
+        direction TB
+        PL1[Monitor All Projects at FINAL_COMPILATION\nSystem-wide Plagiarism Queue] --> PL2[Trigger Plagiarism Check\nper Project — Copyleaks API]
+        PL2 --> PL3[Status: PLAGIARISM_CHECK\nPending to In Progress to Completed]
+        PL3 --> PL4[View Plagiarism Report\nSimilarity Score 0 to 100\nMatched Passages and Source Links]
+        PL4 --> PL5{Score Acceptable?}
+        PL5 -->|Yes| PL6[Advance Project to FINAL_DEFENSE]
+        PL5 -->|No — High Similarity| PL7[Flag Project\nNotify Adviser and Student\nHold from Defense Queue]
+    end
+
+    subgraph REPORTS["Reports and Analytics (FR-C47 to FR-C53)"]
+        direction TB
+        R0[Generate Report] --> R_TYPE{Report Category}
+
+        subgraph RCAT1["1 — Project Progress and Status Analytics"]
+            R_TYPE -->|Status Analytics| R1A[Status Distribution Report\nCount of Projects per Status\nTopic Selection, Proposal Defense,\nFinal Compilation, Archived, etc.]
+            R1A --> R1B[Bottleneck Detection\nProjects Stuck in Same Status\nFlag if No Movement for over 14 days]
+            R1B --> R1C[Submission Compliance Report\nGroups that Missed Latest Coordinator Deadline\nMissed Deadline Count per Group per Phase]
+        end
+
+        subgraph RCAT2["2 — Research and Topic Insights — Gap Analysis"]
+            R_TYPE -->|Topic Insights| R2A[Keyword Frequency Report\nMost-used Technologies and Topics This Year\ne.g. AI, Blockchain, IoT — Heatmap View]
+            R2A --> R2B[Departmental Trends\nProject Volume by Program\nBSIT vs BSEMC Comparison]
+            R2B --> R2C[Research Gap Suggestions\nKeywords in Legacy Archive Not Present\nin Current Academic Year Projects\nIdentify Underexplored Research Areas]
+        end
+
+        subgraph RCAT3["3 — Adviser and Panelist Workload"]
+            R_TYPE -->|Workload| R3A[Adviser Load Report\nNumber of Active Projects per Adviser\nWorkload Distribution Table]
+            R3A --> R3B[Review Turnaround Report\nAverage Time per Adviser to Provide\nFeedback after Student Submission]
+            R3B --> R3C[Defense Schedule Overview\nUpcoming Proposal, System, and Final Defenses\nAssigned Panelists per Defense — Dates and Groups]
+        end
+
+        subgraph RCAT4["4 — Plagiarism and Integrity Report"]
+            R_TYPE -->|Plagiarism| R4A[Average Similarity Score Report\nOverview of Plagiarism Percentages\nAcross All Current Submissions]
+            R4A --> R4B[High-Risk Alerts\nDocuments with Similarity Score above Threshold\ne.g. above 20% — List with Group and Score]
+            R4B --> R4C[Version History Audit\nRevision Count per Group before Reaching Approved\nDocuments Flagged and Subsequently Cleared]
+        end
+
+        subgraph RCAT5["5 — System Usage and Audit Logs"]
+            R_TYPE -->|System Usage| R5A[Active User Sessions Report\nDaily and Weekly Active Users\nStudents vs Faculty Breakdown]
+            R5A --> R5B[Storage Utilization\nGoogle Drive Usage vs 15GB Limit\nStorage per Year and per Project]
+            R5B --> R5C[Audit Trail Summary\nHigh-level Critical Actions Log\nTitle Changes, Status Overrides by Coordinator\nRole Changes, Login Events]
+        end
+
+        R1C & R2C & R3C & R4C & R5C --> REXP[Export to CSV or PDF]
+    end
+
+    subgraph REPO["Repository and Gap Analysis (FR-C54 to FR-C62)"]
+        direction TB
+        RP1[Access Archived Projects Repository\nFull Data — No Field Restrictions] --> RP2[Search by Title or Keyword\nFilter by Academic Year or Phase]
+        RP2 --> RP3[View Full Project Details\nChapters, Documents, Verdicts, Audit Trail]
+        RP3 --> RP4[Run Gap Analysis]
+        RP4 --> RP5[View Keyword Frequencies\nand Topic Clusters Across All Projects]
+        RP5 --> RP6[Generate Gap Suggestions\nIdentify Underexplored Research Areas]
+        RP6 --> RP7[Export Gap Analysis Report\nCSV or PDF]
+    end
+
+    subgraph SUP["Supporting Actions (FR-C63 to FR-C70)"]
+        SP1[View All System Notifications and Alerts\nAcross All Users and Projects]
+        SP2[View Complete System Audit Logs\nStatus Transitions, Role Changes,\nLogin Events, Uploads, Approvals, Similarity Scans]
+        SP3[Mark Notifications as Read\nMark All / Clear Read]
+        SP4[Reset Password]
+        SP5[Update Profile]
+    end
+```
+
+
+================================================================
+END OF WORKFLOW DIAGRAMS
+================================================================
+BukSU Capstone Curriculum Reference:
+  Capstone 1 — Write Chapters 1-3 → Adviser Review Loop
+                → Chapter 1-3 Defense (Panel Evaluation)
+                → Status: PROPOSAL_DEFENDED
+
+  Capstone 2 — System Development → Adviser Review Loop
+                → System Defense (Panel Evaluation)
+                → Status: CAPSTONE2_DEFENDED
+
+  Capstone 3 — Final Compilation → Plagiarism Check (Coordinator)
+                → Final Defense (Panel Evaluation)
+                → Upload Credentials → Status: ARCHIVED
+
+System Constraints:
+  Team Size       — 1 Leader + max 3 Members (4 total)
+  File Formats    — DOCX, PDF, TXT
+  File Size Limit — 25MB per upload
+  OTP Expiry      — 10 minutes
+  JWT Validity    — 30 days
+  Concurrent Users tested — 37+ during UAT
+
+Functional Requirements Coverage:
+  Student     — FR-S01 to FR-S74 (72 requirements; FR-S55 to FR-S58 reassigned to Submission Concurrency Control; FR-S59 to FR-S60 removed — document locking superseded by Google Docs)
+                + Reports: Project Progress, Plagiarism View-only, Submission History
+  Adviser     — FR-A01 to FR-A47 (47 requirements)
+                + Reports: Progress and Status, Revision Turnaround, Submission Compliance, Plagiarism Summary
+  Panel       — FR-P01 to FR-P53 (53 requirements)
+                + Reports: Evaluation Summary, Defense Schedule, Workload Overview, Topic Utilization
+  Instructor  — FR-C01 to FR-C70 (70 requirements)
+                + Reports Category 1: Project Progress and Status Analytics
+                           — Status Distribution, Bottleneck Detection, Submission Compliance
+                + Reports Category 2: Research and Topic Insights
+                           — Keyword Frequency, Departmental Trends, Research Gap Suggestions
+                + Reports Category 3: Adviser and Panelist Workload
+                           — Adviser Load, Review Turnaround, Defense Schedule Overview
+                + Reports Category 4: Plagiarism and Integrity
+                           — Average Similarity Score, High-Risk Alerts above 20%, Version History Audit
+                + Reports Category 5: System Usage and Audit Logs
+                           — Active User Sessions, Storage Utilization, Audit Trail Summary
+
+Source: Capstone Management System — Functional and Non-Functional Requirements
+        BukSU — Project Workspace Document
+================================================================
